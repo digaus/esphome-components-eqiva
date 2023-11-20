@@ -10,22 +10,11 @@ namespace eqiva_ble {
 static const char *const TAG = "eqiva_ble";
 
 bool EqivaListener::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
-        ESP_LOGD(TAG, "(MAC: %s) (Name): %s", device.address_str().c_str(), device.get_name().c_str());
-    if (std::strcmp(device.get_name().c_str(),"KEY-BLE")  == 0) {
-                ESP_LOGD(TAG, "Found Eqiva device (MAC: %s) (Name): %s", device.address_str().c_str(), device.get_name().c_str());
         for (auto &it : device.get_manufacturer_datas()) {
-        // if (it.uuid == esp32_ble_tracker::ESPBTUUID::from_raw("58e06900-15d8-11e6-b737-0002a5d5c51b")) {
-            
-            ESP_LOGD(TAG, "Found Eqiva device (MAC: %s) (UUID): %s  (Name): %s", device.address_str().c_str(), it.uuid.to_string().c_str(), device.get_name().c_str());
-            return true;
-            //}
-        }
-        for (auto &it : device.get_service_datas()) {
-        // if (it.uuid == esp32_ble_tracker::ESPBTUUID::from_raw("58e06900-15d8-11e6-b737-0002a5d5c51b")) {
-            
-            ESP_LOGD(TAG, "Found Eqiva device (MAC: %s) (UUID): %s  (Name): %s", device.address_str().c_str(), it.uuid.to_string().c_str(), device.get_name().c_str());
-            return true;
-            //}
+            if (it.uuid == esp32_ble_tracker::ESPBTUUID::from_uint32(0x1A00  )) {
+                ESP_LOGD(TAG, "Found Eqiva device (MAC: %s) (UUID): %s  (Name): %s", device.address_str().c_str(), it.uuid.to_string().c_str(), device.get_name().c_str());
+                return true;
+            }
         }
     }
  
