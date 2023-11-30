@@ -1,0 +1,67 @@
+esphome:
+  name: esphome-eqiva-lock
+  friendly_name: ESPHome Eqiva Lock
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "yourkey"
+  services:
+  - service: pair
+    variables:
+      card_key: string
+    then:
+      - eqiva_key_ble.pair:
+          card_key: !lambda 'return card_key;'
+  - service: lock
+    then:
+      - eqiva_key_ble.lock:
+  - service: unlock
+    then:
+      - eqiva_key_ble.unlock:
+  - service: open
+    then:
+      - eqiva_key_ble.open:
+  - service: status
+    then:
+      - eqiva_key_ble.status:
+ota:
+
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esphome-Web-4C3A5C"
+    password: "LMLtYr4bSiPg"
+
+captive_portal:
+    
+external_components:
+  - source: custom-components
+
+esp32_ble_tracker:
+  scan_parameters:
+    window: 300ms
+eqiva_ble:
+
+
+# eqiva_ble will discover device, then enter mac address below
+eqiva_key_ble:
+  mac_address: 00:1A:33:18:23:11                #The mac address of the device
+  id: key_ble
+  user_id: 0                                    #user_id after running pair
+  user_key: 12345678906F6763386A726E33746F35    #user_key after running pair
+
+ 
+ 
