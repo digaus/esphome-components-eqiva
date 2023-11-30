@@ -48,7 +48,7 @@ wifi:
 captive_portal:
     
 external_components:
-  - source: custom-components
+  source: github://digaus/esphome-components-eqiva@master
 
 esp32_ble_tracker:
   scan_parameters:
