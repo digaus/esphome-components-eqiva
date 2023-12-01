@@ -65,7 +65,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
     }
     case ESP_GATTC_WRITE_DESCR_EVT: {
       ESP_LOGD(TAG, "ESP_GATTC_WRITE_DESCR_EVT");
-      
       break;
     }
     case ESP_GATTC_NOTIFY_EVT: {
@@ -149,14 +148,13 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
               clientState.local_security_counter = 1;
               clientState.remote_security_counter = 0;
               if (clientState.remote_session_nonce.length() == 8) {
-                ESP_LOGD(TAG,"Nonce exchanged: %s (%s)",  string_to_hex(clientState.remote_session_nonce).c_str(), clientState.remote_session_nonce);
+                ESP_LOGD(TAG,"Nonce exchanged: %s",  string_to_hex(clientState.remote_session_nonce).c_str());
                 ESP_LOGD(TAG,"Remote user_id: %d",  clientState.user_id);
               } else {
-                ESP_LOGD(TAG,"error Nonce exchanged: %s (%s)",  string_to_hex(clientState.remote_session_nonce).c_str(), clientState.remote_session_nonce);
+                ESP_LOGD(TAG,"error Nonce exchanged: %s",  string_to_hex(clientState.remote_session_nonce).c_str());
               }
 
               sendingNonce = false;
-              ESP_LOGD(TAG,"Remote card_key: %d", card_key.length());
 
               if (card_key.length() > 0) {
                 finishPair();
@@ -209,7 +207,7 @@ void EqivaKeyBle::sendCommand(CommandType command) {
   }
 }
 
-void EqivaKeyBle::pair(std::string card) {
+void EqivaKeyBle::startPair(std::string card) {
     card_key = card;
     if (card_key.length() > 0) {
       clientState.user_id = 255;
@@ -269,7 +267,7 @@ void EqivaKeyBle::sendNonce() {
   
     auto *noncemsg = new eQ3Message::Connection_Request_Message;
 
-    ESP_LOGD(TAG, "local_session_nonce: %s, user_id: %d, id: %d ",  clientState.local_session_nonce.c_str(), clientState.user_id, noncemsg->id);
+    ESP_LOGD(TAG, "local_session_nonce: %s, user_id: %d, id: %d ", string_to_hex(clientState.local_session_nonce).c_str(), clientState.user_id, noncemsg->id);
     sendMessage(noncemsg);
 }
 

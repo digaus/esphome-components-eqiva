@@ -36,7 +36,7 @@ class EqivaKeyBle : public BLEClientBase {
     public:
         std::string card_key;
         ClientState clientState;
-        void pair(std::string card);
+        void startPair(std::string card);
         void sendCommand(CommandType command);
         void set_user_id(int user_id) {
             clientState.user_id = user_id;
@@ -64,7 +64,7 @@ class EqivaPair : public Action<Ts...>, public Parented<EqivaKeyBle> {
             if (card_key.length() > 0) {
                 for(char &c : card_key)
                     c = tolower(c);
-                this->parent_->pair(card_key.substr(14,32));
+                this->parent_->startPair(card_key.substr(14,32));
             }
         }
 };

@@ -5,11 +5,11 @@ esphome:
 esp32:
   board: esp32dev
   framework:
-    type: arduino
+    type: esp-idf
 
 # Enable logging
 logger:
-
+  
 # Enable Home Assistant API
 api:
   encryption:
@@ -42,26 +42,25 @@ wifi:
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: "Esphome-Web-4C3A5C"
+    ssid: "Esphome-Web-Eqiva-Lock"
     password: "LMLtYr4bSiPg"
 
 captive_portal:
     
 external_components:
-  source: github://digaus/esphome-components-eqiva
+  - source: custom-components
 
 esp32_ble_tracker:
+  
   scan_parameters:
     window: 300ms
 eqiva_ble:
 
-
-# eqiva_ble will discover device, then enter mac address below
 eqiva_key_ble:
-  mac_address: 00:1A:33:18:23:11                #The mac address of the device
+  mac_address: 00:1A:22:18:42:88
   id: key_ble
-  user_id: 0                                    #user_id after running pair
-  user_key: 12345678906F6763386A726E33746F35    #user_key after running pair
+  user_id: 0
+  user_key: 12345678636F6763386A726E33746F35
 
  
  

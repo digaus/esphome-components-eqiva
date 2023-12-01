@@ -1,10 +1,13 @@
+#define MBEDTLS_CONFIG_FILE "mbedtls/esp_config.h"
+
 #include <mbedtls/aes.h>
 #include <string>
 #include <string.h>
 #include <sstream>
 #include <byteswap.h>
 #include <cmath>
-#include <Arduino.h>
+// #include <Arduino.h>
+#include <esp_log.h>
 
 using std::string;
 
@@ -47,22 +50,28 @@ std::string encrypt_aes_ecb(std::string &data, std::string &key) { // input shou
         ESP_LOGD("eqiva_key_ble", "# Authentifizierungswert Fehler %d | %d", key.length(), (data.length() % 16));
         return data;
     }
-    esp_aes_acquire_hardware();
-    esp_aes_context context;
-    esp_aes_init(&context);
+   // esp_aes_acquire_hardware();
+   // esp_aes_context context;
+   // esp_aes_init(&context);
+    mbedtls_aes_context context;
+    mbedtls_aes_init( &context );
+
     unsigned char *aeskey = (unsigned char *) key.c_str();
-    esp_aes_setkey(&context, aeskey, 128);
+    // esp_aes_setkey(&context, aeskey, 128);
+    mbedtls_aes_setkey_enc(&context, aeskey, 128);
     unsigned char input[16];
     unsigned char output[16];
     std::stringstream output_data;
     for (int i = 0; i < data.length(); i += 16) {
         std::string inp = data.substr(i, 16);
         memcpy(input, inp.c_str(), 16);
-        esp_aes_crypt_ecb(&context, ESP_AES_ENCRYPT, input, output);
+        // esp_aes_crypt_ecb(&context, ESP_AES_ENCRYPT, input, output);
+        mbedtls_aes_crypt_ecb(&context, MBEDTLS_AES_ENCRYPT, input, output);
         output_data.write((char *) output, 16);
     }
-    esp_aes_free(&context);
-    esp_aes_release_hardware();
+    // esp_aes_free(&context);
+    // esp_aes_release_hardware();
+    mbedtls_aes_free(&context);
     return output_data.str();
 }
 
