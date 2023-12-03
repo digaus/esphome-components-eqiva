@@ -9,6 +9,7 @@
 #include "eQ3_constants.h"
 #include "eQ3_message.h"
 #include "eQ3_util.h"
+#include <esp_log.h>
 
 #ifdef USE_ESP32
 
@@ -72,7 +73,6 @@ class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
             auto mac_address = this->mac_address_.value(x...);
             auto user_id = this->user_id_.value(x...);
             auto user_key = this->user_key_.value(x...);
-            
             this->parent_->set_user_id(user_id);
             this->parent_->set_user_key(user_key);
             this->parent_->set_address(mac_address);

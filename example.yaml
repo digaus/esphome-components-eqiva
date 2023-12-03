@@ -15,6 +15,28 @@ api:
   encryption:
     key: "yourkey"
   services:
+  - service: connect
+    variables:
+      # mac_address: string // Unable to pass a mac_address via lambda :?
+      user_id: int
+      user_key: string
+    then:
+      - eqiva_key_ble.connect:
+          mac_address: 00:12:34:56:42:88
+          # mac_address: !lambda 'return mac_address;'
+          user_id: !lambda 'return user_id;'
+          user_key: !lambda 'return user_key;'
+  - service: disconnect
+    then:
+      - eqiva_key_ble.disconnect:
+  - service: connect
+    variables:
+      mac_adress: string
+      user_id: number
+      user_key: string
+    then:
+      - eqiva_key_ble.pair:
+          card_key: !lambda 'return card_key;'
   - service: pair
     variables:
       card_key: string
@@ -59,7 +81,7 @@ eqiva_ble:
 eqiva_key_ble:
   id: key_ble
   # Below are optional and can be passed via new connect service
-  mac_address: 00:1A:22:18:42:88
+  mac_address: 00:12:34:56:42:88
   user_id: 0
   user_key: 12345678636F6763386A726E33746F35
 

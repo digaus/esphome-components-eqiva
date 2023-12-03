@@ -67,7 +67,7 @@ async def eqiva_key_ble_connect_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_ID])
 
-    template_ = await cg.templatable(config[CONF_MAC_ADDRESS].as_hex, args, cg.std_string)
+    template_ = await cg.templatable(config[CONF_MAC_ADDRESS].as_hex, args, cg.uint64)
     cg.add(var.set_mac_address(template_))
     template_ = await cg.templatable(config[CONF_USER_ID], args, cg.int_)
     cg.add(var.set_user_id(template_))
