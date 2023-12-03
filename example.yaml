@@ -51,14 +51,15 @@ external_components:
   - source: custom-components
 
 esp32_ble_tracker:
-  
   scan_parameters:
     window: 300ms
+
 eqiva_ble:
 
 eqiva_key_ble:
-  mac_address: 00:1A:22:18:42:88
   id: key_ble
+  # Below are optional and can be passed via new connect service
+  mac_address: 00:1A:22:18:42:88
   user_id: 0
   user_key: 12345678636F6763386A726E33746F35
 

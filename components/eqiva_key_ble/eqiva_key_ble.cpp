@@ -17,20 +17,11 @@ void EqivaKeyBle::dump_config() {
   ESP_LOGCONFIG(TAG, "  Address: %s", this->address_str().c_str());
   ESP_LOGCONFIG(TAG, "  UserKey: %s", clientState.user_key.length() > 0 ? string_to_hex(clientState.user_key).c_str() : "");
   ESP_LOGCONFIG(TAG, "  UserId: %d", clientState.user_id);
-  ESP_LOGCONFIG(TAG, "  CardKey: %s", card_key.c_str());
+  ESP_LOGCONFIG(TAG, "  CardKey: %s", clientState.card_key.c_str());
 
 }
 
-/*
-      // todo message queue
-        if (nonceSend == false && card_key.length() > 0) {
-        // auto msg = new eQ3Message::CommandMessage(LOCK);
-          pair();
-        } else if(nonceSend == false) {
-          auto * msg = new eQ3Message::StatusRequestMessage;
-          sendMessage(msg);
-        }
-        nonceSend = true;*/
+
 bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t esp_gattc_if,
                                     esp_ble_gattc_cb_param_t *param) {
 
@@ -40,6 +31,21 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
   switch (event) {
     case ESP_GATTC_SEARCH_CMPL_EVT: {
       if (this->state() == espbt::ClientState::ESTABLISHED) {
+        if (write != NULL) {
+          free(read);
+        }
+        if (read != NULL) {
+          free(read);
+        }
+        if (currentMsg != NULL) {
+          free(currentMsg);
+        }
+        if (requestPair) {
+          requestPair = false;
+        }
+        clientState.remote_session_nonce.clear();
+        clientState.local_session_nonce.clear();
+  
         write = this->get_characteristic(esp32_ble_tracker::ESPBTUUID::from_raw("58e06900-15d8-11e6-b737-0002a5d5c51b"), esp32_ble_tracker::ESPBTUUID::from_raw("3141dd40-15db-11e6-a24b-0002a5d5c51b"));
         ESP_LOGD(TAG, "Write (UUID): %s  ",  write->uuid.to_string().c_str());
         read = this->get_characteristic(esp32_ble_tracker::ESPBTUUID::from_raw("58e06900-15d8-11e6-b737-0002a5d5c51b"), esp32_ble_tracker::ESPBTUUID::from_raw("359d4820-15db-11e6-82bd-0002a5d5c51b"));
@@ -51,6 +57,11 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         ESP_LOGD(TAG, "Read (UUID): %s  ",  read->uuid.to_string().c_str());
         init();
       }
+      break;
+    }
+    case ESP_GATTC_DISCONNECT_EVT: {
+      ESP_LOGD(TAG, "ESP_GATTC_DISCONNECT_EVT");
+    
       break;
     }
     case ESP_GATTC_SEARCH_RES_EVT: {
@@ -105,10 +116,13 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
           std::string computed_auth_value = compute_auth_value(decrypted, msgtype, clientState.local_session_nonce, clientState.remote_security_counter, clientState.user_key);
           if (msg_auth_value != computed_auth_value) {
               ESP_LOGD(TAG,"# Auth value mismatch");
+              clientState.remote_session_nonce.clear();
+              clientState.remote_security_counter = 0;
               return true;
           }
-          if(card_key.length() > 0 && clientState.user_id != 255) {
+          if(clientState.card_key.length() > 0 && clientState.user_id != 255) {
             ESP_LOGI(TAG, "Pairing successfull, please copy user_key: %s and user_id: %d into your yaml", string_to_hex(clientState.user_key).c_str(), clientState.user_id);
+            clientState.card_key.clear();
           }
           msgdata = decrypted;
           ESP_LOGD(TAG, "# Decrypted: ");
@@ -134,7 +148,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
           case 0x05: {
               ESP_LOGD(TAG, "Case 0x05");
               auto * message = new eQ3Message::StatusRequestMessage;
-              sendMessage(message);
+              sendMessage(message, false);
               break;
           }
 
@@ -155,9 +169,12 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
               }
 
               sendingNonce = false;
-
-              if (card_key.length() > 0) {
+              if (currentMsg != NULL) {
+                sendMessage(currentMsg, false);
+                currentMsg = NULL;
+              } else if (requestPair) {
                 finishPair();
+                requestPair = false;
               }
               break;
           }
@@ -190,7 +207,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
   return true;
 }
 void EqivaKeyBle::init() {
-    if(clientState.user_key.length() == 16 && clientState.user_id > -1) {
+    if(clientState.user_key.length() == 16) {
       sendNonce();
     } else {
       ESP_LOGE(TAG, "User Error: (Key: %s, ID:  %d)", clientState.user_key.c_str(), clientState.user_id);
@@ -199,19 +216,18 @@ void EqivaKeyBle::init() {
 void EqivaKeyBle::sendCommand(CommandType command) {
   if (command == 3) {
       auto * msg = new eQ3Message::StatusRequestMessage;
-      sendMessage(msg);
+      sendMessage(msg, false);
   } else {
-
       auto msg = new eQ3Message::CommandMessage(command);
-      sendMessage(msg);
+      sendMessage(msg, false);
   }
 }
 
-void EqivaKeyBle::startPair(std::string card) {
-    card_key = card;
-    if (card_key.length() > 0) {
+void EqivaKeyBle::startPair() {
+    if (clientState.card_key.length() > 0) {
       clientState.user_id = 255;
       clientState.user_key.clear();
+      clientState.remote_session_nonce.clear();
       auto randchar = []() -> char
       {
           const char charset[] =
@@ -223,7 +239,7 @@ void EqivaKeyBle::startPair(std::string card) {
       std::string str(16,0);
       std::generate_n( str.begin(), 16, randchar );
       clientState.user_key = str;
-      ESP_LOGI(TAG, "CardKey: %s", card_key.c_str());
+      ESP_LOGI(TAG, "CardKey: %s", clientState.card_key.c_str());
       ESP_LOGI(TAG, "Please press and hold open button for 5 seconds to enter pairing mode");
       ESP_LOGI(TAG, "Trying to pair...");
       init();
@@ -235,29 +251,32 @@ void EqivaKeyBle::startPair(std::string card) {
 }
 
 void EqivaKeyBle::finishPair() {
-    auto *message = new eQ3Message::PairingRequestMessage();
-    message->data.append(1, clientState.user_id);   
-    std::string cardKey = hexstring_to_string(card_key);
+    if (sendingNonce == false && clientState.remote_session_nonce.length() > 0) {
+      auto *message = new eQ3Message::PairingRequestMessage();
+      message->data.append(1, clientState.user_id);   
+      std::string cardKey = hexstring_to_string(clientState.card_key);
+      std::string encrypted_pair_key = crypt_data(clientState.user_key, 0x04, clientState.remote_session_nonce, clientState.local_security_counter, cardKey);
+      if (encrypted_pair_key.length() < 22)
+          encrypted_pair_key.append(22 - encrypted_pair_key.length(), 0);
+      message->data.append(encrypted_pair_key);
 
-    std::string encrypted_pair_key = crypt_data(clientState.user_key, 0x04, clientState.remote_session_nonce, clientState.local_security_counter, cardKey);
-    if (encrypted_pair_key.length() < 22)
-        encrypted_pair_key.append(22 - encrypted_pair_key.length(), 0);
-    message->data.append(encrypted_pair_key);
+      // counter
+      message->data.append(1, (char) (clientState.local_security_counter >> 8));
+      message->data.append(1, (char) (clientState.local_security_counter));
 
-    // counter
-    message->data.append(1, (char) (clientState.local_security_counter >> 8));
-    message->data.append(1, (char) (clientState.local_security_counter));
-
-    // auth value
-    std::string  extra;
-    extra.append(1, clientState.user_id);
-    extra.append(clientState.user_key);
-    if (extra.length() < 23)
-        extra.append(23 - extra.length(), 0);
-    std::string  auth_value = compute_auth_value(extra, 0x04, clientState.remote_session_nonce, clientState.local_security_counter, cardKey);
-    message->data.append(auth_value);
-    sendMessage(message);
-}
+      // auth value
+      std::string  extra;
+      extra.append(1, clientState.user_id);
+      extra.append(clientState.user_key);
+      if (extra.length() < 23)
+          extra.append(23 - extra.length(), 0);
+      std::string auth_value = compute_auth_value(extra, 0x04, clientState.remote_session_nonce, clientState.local_security_counter, cardKey);
+      message->data.append(auth_value);
+      sendMessage(message, false);
+    } else {
+      requestPair = true;
+    }
+  }
 
 void EqivaKeyBle::sendNonce() {
     sendingNonce = true;
@@ -266,50 +285,54 @@ void EqivaKeyBle::sendNonce() {
         clientState.local_session_nonce.append(1,esp_random());
   
     auto *noncemsg = new eQ3Message::Connection_Request_Message;
-
-    ESP_LOGD(TAG, "local_session_nonce: %s, user_id: %d, id: %d ", string_to_hex(clientState.local_session_nonce).c_str(), clientState.user_id, noncemsg->id);
-    sendMessage(noncemsg);
+    sendMessage(noncemsg, true);
 }
 
-bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg) {
-    std::string data;
-    if (msg->isSecure()) {
-        ESP_LOGD(TAG, "prepare secure Send message");
-        std::string padded_data;
-        padded_data.append(msg->encode(&clientState));
-        int pad_to = generic_ceil(padded_data.length(), 15, 8);
-        if (pad_to > padded_data.length())
-            padded_data.append(pad_to - padded_data.length(), 0);
-        // crypt_data(padded_data, msg->id, clientState.remote_session_nonce, clientState.local_security_counter, clientState.user_key);
-        data.append(1, msg->id);
-        data.append(crypt_data(padded_data, msg->id, clientState.remote_session_nonce, clientState.local_security_counter, clientState.user_key));
-        data.append(1, (char) (clientState.local_security_counter >> 8));
-        data.append(1, (char) clientState.local_security_counter);
-        data.append(compute_auth_value(padded_data, msg->id, clientState.remote_session_nonce, clientState.local_security_counter, clientState.user_key));
-        clientState.local_security_counter++;
+bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
+    if ((sendingNonce == false && clientState.remote_session_nonce.length() > 0) || nonce) {
+      std::string data;
+      if (msg->isSecure()) {
+          ESP_LOGD(TAG, "prepare secure Send message");
+          std::string padded_data;
+          padded_data.append(msg->encode(&clientState));
+          int pad_to = generic_ceil(padded_data.length(), 15, 8);
+          if (pad_to > padded_data.length())
+              padded_data.append(pad_to - padded_data.length(), 0);
+          // crypt_data(padded_data, msg->id, clientState.remote_session_nonce, clientState.local_security_counter, clientState.user_key);
+          data.append(1, msg->id);
+          data.append(crypt_data(padded_data, msg->id, clientState.remote_session_nonce, clientState.local_security_counter, clientState.user_key));
+          data.append(1, (char) (clientState.local_security_counter >> 8));
+          data.append(1, (char) clientState.local_security_counter);
+          data.append(compute_auth_value(padded_data, msg->id, clientState.remote_session_nonce, clientState.local_security_counter, clientState.user_key));
+          clientState.local_security_counter++;
+      } else {
+          ESP_LOGD(TAG, "prepare Send message");
+          data.append(1, msg->id);
+          data.append(msg->encode(&clientState));
+      }
+      ESP_LOGD(TAG, "prepare Send message done");
+    
+      // fragment
+      int chunks = data.length() / 15;
+      if (data.length() % 15 > 0)
+          chunks += 1;
+      for (int i = 0; i < chunks; i++) {
+          eQ3Message::MessageFragment frag;
+          frag.data.append(1, (i ? 0 : 0x80) + (chunks - 1 - i)); // fragment status byte
+          frag.data.append(data.substr(i * 15, 15));
+          if (frag.data.length() < 16)
+              frag.data.append(16 - (frag.data.length() % 16), 0);  // padding
+          sendQueue.push(frag);
+          sendFragment();
+          ESP_LOGD(TAG, "Send message: %s ", string_to_hex(frag.data).c_str());
+      }
+      free(msg);
+      return true;
     } else {
-        ESP_LOGD(TAG, "prepare Send message");
-        data.append(1, msg->id);
-        data.append(msg->encode(&clientState));
+      ESP_LOGI(TAG, "Waiting for connection...");
+      currentMsg = msg;
+      return false;
     }
-    ESP_LOGD(TAG, "prepare Send message done");
-  
-    // fragment
-    int chunks = data.length() / 15;
-    if (data.length() % 15 > 0)
-        chunks += 1;
-    for (int i = 0; i < chunks; i++) {
-        eQ3Message::MessageFragment frag;
-        frag.data.append(1, (i ? 0 : 0x80) + (chunks - 1 - i)); // fragment status byte
-        frag.data.append(data.substr(i * 15, 15));
-        if (frag.data.length() < 16)
-            frag.data.append(16 - (frag.data.length() % 16), 0);  // padding
-        sendQueue.push(frag);
-        sendFragment();
-        ESP_LOGD(TAG, "Send message: %s ", string_to_hex(frag.data).c_str());
-    }
-    free(msg);
-    return true;
 }
 
 void EqivaKeyBle::sendFragment() {

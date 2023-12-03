@@ -1,25 +1,20 @@
+//
+// Created by marius on 12/17/18.
+//
+
 #ifndef DOOR_OPENER_CONST_H
 #define DOOR_OPENER_CONST_H
 
 #include <string>
 
-typedef enum {
-    DISCONNECTED = 0,
-    SCANNING = 1,
-    FOUND = 2,
-    CONNECTING = 3,
-    CONNECTED = 4,
-    NONCES_EXCHANGED = 5
-} ConnectionState;
-
 typedef struct {
+    std::string card_key;
     char user_id;
     std::string user_key;
     std::string local_session_nonce;
     std::string remote_session_nonce;
     uint16_t local_security_counter = 1;
     uint16_t remote_security_counter = 0;
-    ConnectionState connectionState = DISCONNECTED;
 } ClientState;
 
 typedef enum {

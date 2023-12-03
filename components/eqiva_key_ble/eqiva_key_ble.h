@@ -22,7 +22,7 @@ using namespace esp32_ble_client;
 class EqivaKeyBle;
 
 class EqivaKeyBle : public BLEClientBase {
-    bool sendMessage(eQ3Message::Message *msg);
+    bool sendMessage(eQ3Message::Message *msg, bool nonce);
     void sendFragment();
     void sendNonce();
     void init();
@@ -33,10 +33,12 @@ class EqivaKeyBle : public BLEClientBase {
     BLECharacteristic *read;
     bool sendingNonce;
     bool sending;
+    eQ3Message::Message *currentMsg;
+    bool requestPair;
+
     public:
-        std::string card_key;
         ClientState clientState;
-        void startPair(std::string card);
+        void startPair();
         void sendCommand(CommandType command);
         void set_user_id(int user_id) {
             clientState.user_id = user_id;
@@ -46,6 +48,13 @@ class EqivaKeyBle : public BLEClientBase {
                 clientState.user_key = hexstring_to_string(user_key);
             }
         }
+        void set_card_key(std::string card_key) {
+            if (card_key.length() > 0) {
+                for(char &c : card_key)
+                    c = tolower(c);
+                clientState.card_key = card_key.substr(14,32);
+            }
+        }
         void dump_config() override;
         bool gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                                 esp_ble_gattc_cb_param_t *param) override;
@@ -53,7 +62,28 @@ class EqivaKeyBle : public BLEClientBase {
 };
 
 
+template<typename... Ts>
+class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
+    TEMPLATABLE_VALUE(uint64_t, mac_address)
+    TEMPLATABLE_VALUE(int, user_id)
+    TEMPLATABLE_VALUE(std::string, user_key)
+    public:
+        void play(Ts... x) override { 
+            auto mac_address = this->mac_address_.value(x...);
+            auto user_id = this->user_id_.value(x...);
+            auto user_key = this->user_key_.value(x...);
+            
+            this->parent_->set_user_id(user_id);
+            this->parent_->set_user_key(user_key);
+            this->parent_->set_address(mac_address);
+        }
+};
 
+template<typename... Ts>
+class EqivaDisconnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
+ public:
+  void play(Ts... x) override { this->parent_->disconnect(); }
+};
 
 template<typename... Ts>
 class EqivaPair : public Action<Ts...>, public Parented<EqivaKeyBle> {
@@ -61,11 +91,8 @@ class EqivaPair : public Action<Ts...>, public Parented<EqivaKeyBle> {
     public:
         void play(Ts... x) override { 
             auto card_key = this->card_key_.value(x...);
-            if (card_key.length() > 0) {
-                for(char &c : card_key)
-                    c = tolower(c);
-                this->parent_->startPair(card_key.substr(14,32));
-            }
+            this->parent_->set_card_key(card_key);
+            this->parent_->startPair();
         }
 };
 

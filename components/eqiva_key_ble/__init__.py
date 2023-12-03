@@ -24,13 +24,15 @@ EqivaUnlock = eqiva_key_ble_ns.class_("EqivaUnlock", automation.Action)
 EqivaOpen = eqiva_key_ble_ns.class_("EqivaOpen", automation.Action)
 EqivaStatus = eqiva_key_ble_ns.class_("EqivaStatus", automation.Action)
 EqivaPair = eqiva_key_ble_ns.class_("EqivaPair", automation.Action)
+EqivaConnect = eqiva_key_ble_ns.class_("EqivaConnect", automation.Action)
+EqivaDisconnect = eqiva_key_ble_ns.class_("EqivaDisconnect", automation.Action)
 
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(EqivaKeyBle),
-            cv.Required(CONF_MAC_ADDRESS): cv.mac_address,
+            cv.Optional(CONF_MAC_ADDRESS): cv.mac_address,
             cv.Optional(CONF_USER_ID, default=255): cv.int_,
             cv.Optional(CONF_USER_KEY, default=""): cv.string,
         }
@@ -44,10 +46,48 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await esp32_ble_tracker.register_client(var, config)
-    cg.add(var.set_address(config[CONF_MAC_ADDRESS].as_hex))
+    if mac_address := config.get(CONF_MAC_ADDRESS):
+        cg.add(var.set_address(mac_address.as_hex))
     cg.add(var.set_user_id(config[CONF_USER_ID]))
     cg.add(var.set_user_key(config[CONF_USER_KEY]))
 
+@automation.register_action(
+    "eqiva_key_ble.connect",
+    EqivaConnect,
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.use_id(EqivaKeyBle),
+            cv.Required(CONF_MAC_ADDRESS): cv.mac_address,
+            cv.Required(CONF_USER_ID): cv.templatable(cv.int_),
+            cv.Required(CONF_USER_KEY): cv.templatable(cv.string),
+        }
+    ),
+)
+async def eqiva_key_ble_connect_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_ID])
+
+    template_ = await cg.templatable(config[CONF_MAC_ADDRESS].as_hex, args, cg.std_string)
+    cg.add(var.set_mac_address(template_))
+    template_ = await cg.templatable(config[CONF_USER_ID], args, cg.int_)
+    cg.add(var.set_user_id(template_))
+    template_ = await cg.templatable(config[CONF_USER_KEY], args, cg.std_string)
+    cg.add(var.set_user_key(template_))
+    return var
+
+@automation.register_action(
+    "eqiva_key_ble.disconnect",
+    EqivaDisconnect,
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.use_id(EqivaKeyBle),
+        }
+    ),
+)
+async def eqiva_key_ble_disconnect_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_ID])
+    return var
 
 @automation.register_action(
     "eqiva_key_ble.pair",
