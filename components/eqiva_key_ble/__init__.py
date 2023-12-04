@@ -7,12 +7,13 @@ from esphome.const import (
     CONF_MAC_ADDRESS,
 )
 
+CONF_EQIVA_KEY_BLE_ID = "eqiva_key_ble_id"
 
 CONF_USER_ID = "user_id"
 CONF_USER_KEY = "user_key"
 CONF_CARD_KEY = "card_key"
 
-AUTO_LOAD = ["esp32_ble_client"]
+AUTO_LOAD = ["esp32_ble_client", "sensor"]
 DEPENDENCIES = ["esp32_ble_tracker"]
 CODEOWNERS = ["@digaus"]
 

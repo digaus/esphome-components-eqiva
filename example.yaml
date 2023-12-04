@@ -86,4 +86,9 @@ eqiva_key_ble:
   user_key: 12345678636F6763386A726E33746F35
 
  
- 
+ sensor:
+  - platform: eqiva_key_ble
+    status: 
+      name: "Lock Status"
+    low_battery:
+      name: "Lock Battery Low"

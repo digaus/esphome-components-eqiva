@@ -2,6 +2,7 @@
 
 #include "esphome/components/esp32_ble_client/ble_client_base.h"
 #include "esphome/components/esp32_ble_tracker/esp32_ble_tracker.h"
+#include "esphome/components/sensor/sensor.h"
 #include "esphome/core/component.h"
 #include "esphome/core/automation.h"
 
@@ -56,10 +57,15 @@ class EqivaKeyBle : public BLEClientBase {
                 clientState.card_key = card_key.substr(14,32);
             }
         }
+        void set_status_sensor(sensor::Sensor *status_sensor) { this->status_sensor_ = status_sensor; }
+        void set_low_battery_sensor(sensor::Sensor *low_battery_sensor) { this->low_battery_sensor_ = low_battery_sensor; }
         void dump_config() override;
         bool gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                                 esp_ble_gattc_cb_param_t *param) override;
-                                
+
+    protected: 
+        sensor::Sensor *low_battery_sensor_{nullptr};
+        sensor::Sensor *status_sensor_{nullptr};                
 };
 
 
