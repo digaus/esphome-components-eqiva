@@ -2,7 +2,7 @@
 
 #include "esphome/components/esp32_ble_client/ble_client_base.h"
 #include "esphome/components/esp32_ble_tracker/esp32_ble_tracker.h"
-#include "esphome/components/sensor/sensor.h"
+#include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/core/component.h"
 #include "esphome/core/automation.h"
 
@@ -37,7 +37,48 @@ class EqivaKeyBle : public BLEClientBase {
     bool sending;
     eQ3Message::Message *currentMsg;
     bool requestPair;
-
+    std::string getClientState() {
+        std::string client_state;
+        switch(this->state_) {
+            case espbt::ClientState::INIT: {
+                client_state = "INIT";
+                break;
+            }
+            case espbt::ClientState::DISCONNECTING: {
+                client_state = "DISCONNECTING";
+                break;
+            }
+            case espbt::ClientState::IDLE: {
+                client_state = "IDLE";
+                break;
+            }
+            case espbt::ClientState::SEARCHING: {
+                client_state = "SEARCHING";
+                break;
+            }
+            case espbt::ClientState::DISCOVERED: {
+                client_state = "DISCOVERED";
+                break;
+            }
+            case espbt::ClientState::READY_TO_CONNECT: {
+                client_state = "READY_TO_CONNECT";
+                break;
+            }
+            case espbt::ClientState::CONNECTING: {
+                client_state = "CONNECTING";
+                break;
+            }
+            case espbt::ClientState::CONNECTED: {
+                client_state = "CONNECTED";
+                break;
+            }
+            case espbt::ClientState::ESTABLISHED: {
+                client_state = "ESTABLISHED";
+                break;
+            }
+        }
+        return client_state;
+    }
     public:
         ClientState clientState;
         void startPair();
@@ -57,15 +98,22 @@ class EqivaKeyBle : public BLEClientBase {
                 clientState.card_key = card_key.substr(14,32);
             }
         }
-        void set_status_sensor(sensor::Sensor *status_sensor) { this->status_sensor_ = status_sensor; }
-        void set_low_battery_sensor(sensor::Sensor *low_battery_sensor) { this->low_battery_sensor_ = low_battery_sensor; }
+        void set_lock_ble_state_sensor(text_sensor::TextSensor *lock_ble_state_sensor) { this->lock_ble_state_sensor_ = lock_ble_state_sensor; }
+        void set_low_battery_sensor(text_sensor::TextSensor *low_battery_sensor) { this->low_battery_sensor_ = low_battery_sensor; }
+        void set_lock_status_sensor(text_sensor::TextSensor *lock_status_sensor) { this->lock_status_sensor_ = lock_status_sensor; }
+
+        void set_state(esphome::esp32_ble_tracker::ClientState st) {
+            this->state_ = st;
+            this->lock_ble_state_sensor_->publish_state(getClientState()); 
+        };
         void dump_config() override;
         bool gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                                 esp_ble_gattc_cb_param_t *param) override;
 
     protected: 
-        sensor::Sensor *low_battery_sensor_{nullptr};
-        sensor::Sensor *status_sensor_{nullptr};                
+        text_sensor::TextSensor *lock_ble_state_sensor_{nullptr};                
+        text_sensor::TextSensor *low_battery_sensor_{nullptr};
+        text_sensor::TextSensor *lock_status_sensor_{nullptr};
 };
 
 

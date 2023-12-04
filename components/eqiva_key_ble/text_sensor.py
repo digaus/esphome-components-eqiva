@@ -1,27 +1,31 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import sensor
+from esphome.components import text_sensor
 from esphome.const import (
     ENTITY_CATEGORY_NONE,
+    ENTITY_CATEGORY_DIAGNOSTIC,
     ICON_BATTERY,
+    ICON_SIGNAL_DISTANCE_VARIANT,
 )
 from . import CONF_EQIVA_KEY_BLE_ID, EqivaKeyBle
 
 DEPENDENCIES = ["eqiva_key_ble"]
 
-CONF_STATUS = "status"
+CONF_LOCK_BLE_STATE = "lock_ble_state"
 CONF_LOW_BATTERY = "low_battery"
+CONF_LOCK_STATUS = "lock_status"
 
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_EQIVA_KEY_BLE_ID): cv.use_id(EqivaKeyBle),
-        cv.Optional(CONF_STATUS): sensor.sensor_schema(
-            accuracy_decimals=0,
+        cv.Optional(CONF_LOCK_BLE_STATE): text_sensor.text_sensor_schema(
             entity_category=ENTITY_CATEGORY_NONE,
         ),
-        cv.Optional(CONF_LOW_BATTERY): sensor.sensor_schema(
+        cv.Optional(CONF_LOW_BATTERY): text_sensor.text_sensor_schema(
             icon=ICON_BATTERY,
-            accuracy_decimals=0,
+            entity_category=ENTITY_CATEGORY_NONE,
+        ),
+        cv.Optional(CONF_LOCK_STATUS): text_sensor.text_sensor_schema(
             entity_category=ENTITY_CATEGORY_NONE,
         ),
     }
@@ -32,11 +36,12 @@ async def to_code(config):
     hub = await cg.get_variable(config[CONF_EQIVA_KEY_BLE_ID])
 
     for key in [
-        CONF_STATUS,
+        CONF_LOCK_BLE_STATE,
         CONF_LOW_BATTERY,
+        CONF_LOCK_STATUS,
     ]:
         if key not in config:
             continue
         conf = config[key]
-        sens = await sensor.new_sensor(conf)
+        sens = await text_sensor.new_text_sensor(conf)
         cg.add(getattr(hub, f"set_{key}_sensor")(sens))

@@ -21,13 +21,15 @@ void EqivaKeyBle::dump_config() {
 
 }
 
-
 bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t esp_gattc_if,
                                     esp_ble_gattc_cb_param_t *param) {
 
 
   if (!BLEClientBase::gattc_event_handler(event, esp_gattc_if, param))
     return false;
+
+  this->lock_ble_state_sensor_->publish_state(getClientState());
+
   switch (event) {
     case ESP_GATTC_SEARCH_CMPL_EVT: {
       if (this->state() == espbt::ClientState::ESTABLISHED) {
@@ -56,6 +58,10 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         );
         ESP_LOGD(TAG, "Read (UUID): %s  ",  read->uuid.to_string().c_str());
         init();
+        if (currentMsg == NULL && requestPair == false) {
+          auto * msg = new eQ3Message::StatusRequestMessage;
+          sendMessage(msg, false);
+        }
       }
       break;
     }
@@ -184,8 +190,31 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
               // status info
               eQ3Message::Status_Info_Message message;
               message.data = msgdata;
-              this->status_sensor_->publish_state((uint16_t) message.getLockStatus());
-              this->low_battery_sensor_->publish_state((uint16_t) message.isBatteryLow() ? 1 : 0);
+              std::string lockStatus;
+              switch(message.getLockStatus()) {
+                case 0: {
+                  lockStatus = "UNKNOWN";
+                  break;
+                }
+                case 1: {
+                  lockStatus = "MOVING";
+                  break;
+                }
+                case 2: {
+                  lockStatus = "UNLOCKED";
+                  break;
+                }
+                case 3: {
+                  lockStatus = "LOCKED";
+                  break;
+                }
+                case 4: {
+                  lockStatus = "OPENED";
+                  break;
+                }
+              }
+              this->lock_status_sensor_->publish_state(lockStatus);
+              this->low_battery_sensor_->publish_state(message.isBatteryLow() ? "true" : "false");
 
               ESP_LOGD(TAG, "# Lock state: %d", message.getLockStatus());
               ESP_LOGD(TAG, "# Battery low: %s", message.isBatteryLow() ? "true" : "false");

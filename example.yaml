@@ -49,6 +49,11 @@ api:
       - eqiva_key_ble.status:
 ota:
 
+web_server:
+  include_internal: true
+  local: true
+  port: 80
+
 
 wifi:
   ssid: !secret wifi_ssid
@@ -77,14 +82,14 @@ eqiva_key_ble:
   user_id: 0
   user_key: 12345678636F6763386A726E33746F35
 
- 
- sensor:
+
+text_sensor: 
   - platform: eqiva_key_ble
-    status: 
+    lock_status: 
       name: "Lock Status"
-      # on_raw_value:
-        # then:   Do stuff on state change (!lambda "return x") 
     low_battery:
-      name: "Lock Battery Low"
-      # on_raw_value:
-        # then:   Do stuff on state change (!lambda "return x") 
+      name: "Low Battery"
+    lock_ble_state:
+      name: "Lock BLE State"
+    # on_raw_value:
+            # then:   Do stuff on state change (!lambda "return x") 

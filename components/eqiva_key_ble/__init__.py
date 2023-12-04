@@ -13,7 +13,7 @@ CONF_USER_ID = "user_id"
 CONF_USER_KEY = "user_key"
 CONF_CARD_KEY = "card_key"
 
-AUTO_LOAD = ["esp32_ble_client", "sensor"]
+AUTO_LOAD = ["esp32_ble_client", "text_sensor"]
 DEPENDENCIES = ["esp32_ble_tracker"]
 CODEOWNERS = ["@digaus"]
 
