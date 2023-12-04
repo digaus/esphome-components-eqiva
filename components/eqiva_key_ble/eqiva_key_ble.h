@@ -101,11 +101,14 @@ class EqivaKeyBle : public BLEClientBase {
         void set_lock_ble_state_sensor(text_sensor::TextSensor *lock_ble_state_sensor) { this->lock_ble_state_sensor_ = lock_ble_state_sensor; }
         void set_low_battery_sensor(text_sensor::TextSensor *low_battery_sensor) { this->low_battery_sensor_ = low_battery_sensor; }
         void set_lock_status_sensor(text_sensor::TextSensor *lock_status_sensor) { this->lock_status_sensor_ = lock_status_sensor; }
+        void set_user_key_sensor(text_sensor::TextSensor *user_key_sensor) { this->user_key_sensor_ = user_key_sensor; }
+        void set_user_id_sensor(text_sensor::TextSensor *user_id_sensor) { this->user_id_sensor_ = user_id_sensor; }
 
         void set_state(esphome::esp32_ble_tracker::ClientState st) {
             this->state_ = st;
             this->lock_ble_state_sensor_->publish_state(getClientState()); 
         };
+
         void dump_config() override;
         bool gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                                 esp_ble_gattc_cb_param_t *param) override;
@@ -114,6 +117,9 @@ class EqivaKeyBle : public BLEClientBase {
         text_sensor::TextSensor *lock_ble_state_sensor_{nullptr};                
         text_sensor::TextSensor *low_battery_sensor_{nullptr};
         text_sensor::TextSensor *lock_status_sensor_{nullptr};
+        text_sensor::TextSensor *user_key_sensor_{nullptr};
+        text_sensor::TextSensor *user_id_sensor_{nullptr};
+
 };
 
 

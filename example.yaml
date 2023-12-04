@@ -91,5 +91,9 @@ text_sensor:
       name: "Low Battery"
     lock_ble_state:
       name: "Lock BLE State"
+    user_id:
+      name: "User ID"
+    user_key:
+      name: "User Key"
     # on_raw_value:
             # then:   Do stuff on state change (!lambda "return x") 

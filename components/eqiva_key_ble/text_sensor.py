@@ -14,6 +14,8 @@ DEPENDENCIES = ["eqiva_key_ble"]
 CONF_LOCK_BLE_STATE = "lock_ble_state"
 CONF_LOW_BATTERY = "low_battery"
 CONF_LOCK_STATUS = "lock_status"
+CONF_USER_KEY = "user_key"
+CONF_USER_ID = "user_id"
 
 CONFIG_SCHEMA = cv.Schema(
     {
@@ -28,6 +30,12 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_LOCK_STATUS): text_sensor.text_sensor_schema(
             entity_category=ENTITY_CATEGORY_NONE,
         ),
+        cv.Optional(CONF_USER_KEY): text_sensor.text_sensor_schema(
+            entity_category=ENTITY_CATEGORY_NONE,
+        ),
+        cv.Optional(CONF_USER_ID): text_sensor.text_sensor_schema(
+            entity_category=ENTITY_CATEGORY_NONE,
+        ),
     }
 )
 
@@ -39,6 +47,8 @@ async def to_code(config):
         CONF_LOCK_BLE_STATE,
         CONF_LOW_BATTERY,
         CONF_LOCK_STATUS,
+        CONF_USER_KEY,
+        CONF_USER_ID
     ]:
         if key not in config:
             continue
