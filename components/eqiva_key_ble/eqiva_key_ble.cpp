@@ -58,7 +58,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         );
         ESP_LOGD(TAG, "Read (UUID): %s  ",  read->uuid.to_string().c_str());
         init();
-        if (currentMsg == NULL && requestPair == false) {
+        if (currentMsg == NULL && requestPair == false && clientState.user_key.length() > 0 && clientState.user_id < 255) {
           auto * msg = new eQ3Message::StatusRequestMessage;
           sendMessage(msg, false);
         }
@@ -170,10 +170,15 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
               if (clientState.remote_session_nonce.length() == 8) {
                 ESP_LOGD(TAG,"Nonce exchanged: %s",  string_to_hex(clientState.remote_session_nonce).c_str());
                 ESP_LOGD(TAG,"Remote user_id: %d",  clientState.user_id);
+           
               } else {
                 ESP_LOGD(TAG,"error Nonce exchanged: %s",  string_to_hex(clientState.remote_session_nonce).c_str());
               }
 
+              int user_id = message.getUserId();
+              this->user_key_sensor_->publish_state(string_to_hex(clientState.user_key).c_str());
+              this->user_id_sensor_->publish_state(std::to_string(user_id));
+  
               sendingNonce = false;
               if (currentMsg != NULL) {
                 sendMessage(currentMsg, false);
@@ -260,6 +265,7 @@ void EqivaKeyBle::startPair() {
       clientState.user_id = 255;
       clientState.user_key.clear();
       clientState.remote_session_nonce.clear();
+      srand((unsigned int)time(NULL));
       auto randchar = []() -> char
       {
           const char charset[] =
@@ -275,7 +281,7 @@ void EqivaKeyBle::startPair() {
       ESP_LOGI(TAG, "Please press and hold open button for 5 seconds to enter pairing mode");
       ESP_LOGI(TAG, "Trying to pair...");
       init();
-      
+      finishPair();
     } else {
       ESP_LOGI(TAG, "Card key missing!");
     }
