@@ -90,5 +90,9 @@ eqiva_key_ble:
   - platform: eqiva_key_ble
     status: 
       name: "Lock Status"
+      # on_raw_value:
+        # then:   Do stuff on state change (!lambda "return x") 
     low_battery:
       name: "Lock Battery Low"
+      # on_raw_value:
+        # then:   Do stuff on state change (!lambda "return x") 
