@@ -29,14 +29,6 @@ api:
   - service: disconnect
     then:
       - eqiva_key_ble.disconnect:
-  - service: connect
-    variables:
-      mac_adress: string
-      user_id: number
-      user_key: string
-    then:
-      - eqiva_key_ble.pair:
-          card_key: !lambda 'return card_key;'
   - service: pair
     variables:
       card_key: string
