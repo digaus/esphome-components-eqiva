@@ -70,8 +70,8 @@ external_components:
   source: github://digaus/esphome-components-eqiva
 
 esp32_ble_tracker:
-  scan_parameters:
-    window: 300ms
+  # scan_parameters:
+  #  window: 300ms
 
 eqiva_ble:
 
