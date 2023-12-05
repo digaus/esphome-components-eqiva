@@ -78,6 +78,8 @@ captive_portal:
     
 external_components:
   source: github://digaus/esphome-components-eqiva
+  # use refresh when you do not get latest version
+  # refresh: 0s
 
 esp32_ble_tracker:
   # scan_parameters:
