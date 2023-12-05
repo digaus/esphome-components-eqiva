@@ -152,7 +152,6 @@ lock:
             user_key: 1234567891234567897234696139787E
       - eqiva_key_ble.open:
 
-lock:
   - platform: template
     name: "Lock 2"
     lambda: |-
