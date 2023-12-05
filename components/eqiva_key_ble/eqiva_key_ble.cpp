@@ -34,12 +34,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
   switch (event) {
     case ESP_GATTC_SEARCH_CMPL_EVT: {
       if (this->state() == espbt::ClientState::ESTABLISHED) {
-        if (write != NULL) {
-          free(read);
-        }
-        if (read != NULL) {
-          free(read);
-        }
         clientState.remote_session_nonce.clear();
         clientState.local_session_nonce.clear();
   
