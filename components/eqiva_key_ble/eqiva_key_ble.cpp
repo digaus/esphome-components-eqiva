@@ -326,7 +326,7 @@ void EqivaKeyBle::sendNonce() {
 }
 
 bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
-    if ((sendingNonce == false && clientState.remote_session_nonce.length() > 0) || nonce) {
+    if (((sendingNonce == false && clientState.remote_session_nonce.length() > 0) || nonce) && this->state() == espbt::ClientState::ESTABLISHED) {
       std::string data;
       if (msg->isSecure()) {
           ESP_LOGD(TAG, "prepare secure Send message");
