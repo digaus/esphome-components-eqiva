@@ -9,6 +9,9 @@
 
 typedef struct {
     std::string card_key;
+    bool turn_left;
+    bool key_horizontal;
+    char lock_turns;
     char user_id;
     std::string user_key;
     std::string local_session_nonce;
@@ -16,6 +19,8 @@ typedef struct {
     uint16_t local_security_counter = 1;
     uint16_t remote_security_counter = 0;
 } ClientState;
+
+
 
 typedef enum {
     LOCK = 0,

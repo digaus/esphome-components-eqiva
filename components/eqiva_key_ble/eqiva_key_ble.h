@@ -82,6 +82,7 @@ class EqivaKeyBle : public BLEClientBase {
     public:
         ClientState clientState;
         void startPair();
+        void applySettings();
         void sendCommand(CommandType command);
         void set_user_id(int user_id) {
             clientState.user_id = user_id;
@@ -98,6 +99,11 @@ class EqivaKeyBle : public BLEClientBase {
                 clientState.card_key = card_key.substr(14,32);
             }
         }
+        void set_turn_left(bool turn_left) { clientState.turn_left = turn_left; }
+        void set_key_horizontal(bool key_horizontal) { clientState.key_horizontal = key_horizontal; }
+        void set_lock_turns(int lock_turns) { clientState.lock_turns = lock_turns; }
+
+
         void set_lock_ble_state_sensor(text_sensor::TextSensor *lock_ble_state_sensor) { this->lock_ble_state_sensor_ = lock_ble_state_sensor; }
         void set_low_battery_sensor(text_sensor::TextSensor *low_battery_sensor) { this->low_battery_sensor_ = low_battery_sensor; }
         void set_lock_status_sensor(text_sensor::TextSensor *lock_status_sensor) { this->lock_status_sensor_ = lock_status_sensor; }
@@ -122,6 +128,23 @@ class EqivaKeyBle : public BLEClientBase {
 
 };
 
+
+template<typename... Ts>
+class EqivaSettings : public Action<Ts...>, public Parented<EqivaKeyBle> {
+    TEMPLATABLE_VALUE(bool, turn_left)
+    TEMPLATABLE_VALUE(bool, key_horizontal)
+    TEMPLATABLE_VALUE(int, lock_turns)
+    public:
+        void play(Ts... x) override { 
+            auto turn_left = this->turn_left_.value(x...);
+            auto key_horizontal = this->key_horizontal_.value(x...);
+            auto lock_turns = this->lock_turns_.value(x...);
+            this->parent_->set_turn_left(turn_left);
+            this->parent_->set_key_horizontal(key_horizontal);
+            this->parent_->set_lock_turns(lock_turns);
+            this->parent_->applySettings();
+        }
+};
 
 template<typename... Ts>
 class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {

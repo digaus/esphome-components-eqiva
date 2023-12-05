@@ -97,6 +97,13 @@ public:
         std::string encode(ClientState *state) override;
     };
 
+    class Mount_Options_Set_Message : public Message {
+    public:
+        Mount_Options_Set_Message();
+        std::string encode(ClientState *state) override;
+    };
+
+
     class FragmentAckMessage : public MessageFragment {
     public:
         char id;

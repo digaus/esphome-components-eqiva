@@ -265,6 +265,36 @@ std::string eQ3Message::PairingRequestMessage::encode(ClientState *state) {
     return data;
 }
 
+
+
+// -----------------------------------------------------------------------------
+// --[Mount_Options_Set_Message]-----------------------------------------------
+// -----------------------------------------------------------------------------
+eQ3Message::Mount_Options_Set_Message::Mount_Options_Set_Message() {
+    id = 0x86;
+}
+
+// -----------------------------------------------------------------------------
+// --[encode]-------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+std::string eQ3Message::Mount_Options_Set_Message::encode(ClientState *state) {
+    std::stringstream ss;
+    char bit;
+    if (state->turn_left && state->key_horizontal) {
+        bit = 3;
+    } else if (state->turn_left == false && state->key_horizontal) {
+        bit = 2;
+    } else if (state->turn_left && state->key_horizontal == false) {
+        bit = 1;
+    } else if (state->turn_left == false && state->key_horizontal == false) {
+        bit = 0;
+    }  
+    ss.put(bit);
+    ss.put(state->lock_turns);
+
+    return ss.str();
+}
+
 // -----------------------------------------------------------------------------
 // --[FragmentAckMessage]-------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -274,3 +304,4 @@ eQ3Message::FragmentAckMessage::FragmentAckMessage(char fragment_id) {
     ss << fragment_id;
     data = ss.str();
 }
+

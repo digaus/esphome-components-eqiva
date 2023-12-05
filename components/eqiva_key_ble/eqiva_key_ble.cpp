@@ -62,6 +62,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
           auto * msg = new eQ3Message::StatusRequestMessage;
           sendMessage(msg, false);
         }
+  
       }
       break;
     }
@@ -259,13 +260,16 @@ void EqivaKeyBle::sendCommand(CommandType command) {
       sendMessage(msg, false);
   }
 }
-
+void EqivaKeyBle::applySettings() {
+    auto * msg = new eQ3Message::Mount_Options_Set_Message;
+    sendMessage(msg, false);
+}
 void EqivaKeyBle::startPair() {
     if (clientState.card_key.length() > 0) {
       clientState.user_id = 255;
       clientState.user_key.clear();
       clientState.remote_session_nonce.clear();
-      srand((unsigned int)time(NULL));
+        srand((unsigned int)time(NULL));
       auto randchar = []() -> char
       {
           const char charset[] =

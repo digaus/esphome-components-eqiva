@@ -12,6 +12,9 @@ CONF_EQIVA_KEY_BLE_ID = "eqiva_key_ble_id"
 CONF_USER_ID = "user_id"
 CONF_USER_KEY = "user_key"
 CONF_CARD_KEY = "card_key"
+CONF_TURN_LEFT = "turn_left"
+CONF_KEY_HORIZONTAL = "key_horizontal"
+CONF_LOCK_TURNS = "lock_turns"
 
 AUTO_LOAD = ["esp32_ble_client", "text_sensor"]
 DEPENDENCIES = ["esp32_ble_tracker"]
@@ -27,6 +30,7 @@ EqivaStatus = eqiva_key_ble_ns.class_("EqivaStatus", automation.Action)
 EqivaPair = eqiva_key_ble_ns.class_("EqivaPair", automation.Action)
 EqivaConnect = eqiva_key_ble_ns.class_("EqivaConnect", automation.Action)
 EqivaDisconnect = eqiva_key_ble_ns.class_("EqivaDisconnect", automation.Action)
+EqivaSettings = eqiva_key_ble_ns.class_("EqivaSettings", automation.Action)
 
 
 CONFIG_SCHEMA = (
@@ -34,7 +38,7 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(): cv.declare_id(EqivaKeyBle),
             cv.Optional(CONF_MAC_ADDRESS): cv.mac_address,
-            cv.Optional(CONF_USER_ID, default=255): cv.int_,
+            cv.Optional(CONF_USER_ID, default=255): cv.int_range(min=0, max=8),
             cv.Optional(CONF_USER_KEY, default=""): cv.string,
         }
     )
@@ -52,6 +56,30 @@ async def to_code(config):
     cg.add(var.set_user_id(config[CONF_USER_ID]))
     cg.add(var.set_user_key(config[CONF_USER_KEY]))
 
+
+@automation.register_action(
+    "eqiva_key_ble.settings",
+    EqivaSettings,
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.use_id(EqivaKeyBle),
+            cv.Required(CONF_TURN_LEFT): cv.templatable(cv.boolean),
+            cv.Required(CONF_KEY_HORIZONTAL): cv.templatable(cv.boolean),
+            cv.Required(CONF_LOCK_TURNS): cv.templatable(cv.int_range(min=1, max=4)),
+        }
+    ),
+)
+async def eqiva_key_ble_settings_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_ID])
+    template_ = await cg.templatable(config[CONF_TURN_LEFT], args, bool)
+    cg.add(var.set_turn_left(template_))
+    template_ = await cg.templatable(config[CONF_KEY_HORIZONTAL], args, bool)
+    cg.add(var.set_key_horizontal(template_))
+    template_ = await cg.templatable(config[CONF_LOCK_TURNS], args, cg.int_)
+    cg.add(var.set_lock_turns(template_))
+    return var
+
 @automation.register_action(
     "eqiva_key_ble.connect",
     EqivaConnect,
@@ -67,7 +95,6 @@ async def to_code(config):
 async def eqiva_key_ble_connect_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_ID])
-
     template_ = await cg.templatable(config[CONF_MAC_ADDRESS].as_hex, args, cg.uint64)
     cg.add(var.set_mac_address(template_))
     template_ = await cg.templatable(config[CONF_USER_ID], args, cg.int_)

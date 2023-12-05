@@ -15,6 +15,16 @@ api:
   encryption:
     key: "yourkey"
   services:
+  - service: settings
+    variables:
+      turn_left: bool
+      key_horizontal: bool
+      lock_turns: int
+    then:
+      - eqiva_key_ble.settings:
+          turn_left: !lambda 'return turn_left;'
+          key_horizontal: !lambda 'return key_horizontal;'
+          lock_turns: !lambda 'return lock_turns;'
   - service: connect
     variables:
       # mac_address: string // Unable to pass a mac_address via lambda :?
