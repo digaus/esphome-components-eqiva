@@ -38,7 +38,7 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(): cv.declare_id(EqivaKeyBle),
             cv.Optional(CONF_MAC_ADDRESS): cv.mac_address,
-            cv.Optional(CONF_USER_ID, default=255): cv.int_range(min=0, max=8),
+            cv.Optional(CONF_USER_ID, default=255): cv.one_of(0, 1, 2, 3, 4, 5, 6, 7, 255, int=True),
             cv.Optional(CONF_USER_KEY, default=""): cv.string,
         }
     )
@@ -87,7 +87,7 @@ async def eqiva_key_ble_settings_to_code(config, action_id, template_arg, args):
         {
             cv.GenerateID(): cv.use_id(EqivaKeyBle),
             cv.Required(CONF_MAC_ADDRESS): cv.mac_address,
-            cv.Required(CONF_USER_ID): cv.templatable(cv.int_),
+            cv.Required(CONF_USER_ID): cv.templatable(cv.one_of(0, 1, 2, 3, 4, 5, 6, 7, int=True)),
             cv.Required(CONF_USER_KEY): cv.templatable(cv.string),
         }
     ),
