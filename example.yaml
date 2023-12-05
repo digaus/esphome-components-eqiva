@@ -115,7 +115,19 @@ text_sensor:
             # then:   Do stuff on state change (!lambda "return x") 
 
 
+# Call Status every 4 minutes because lock seems to disconnect after 5 minutes of inactivity
+# need to watch battery consumption
+time:
+  - platform: sntp
+    # ...
+    on_time:
+      # Every 5 minutes
+      - seconds: 0
+        minutes: /4
+        then:
+          - eqiva_key_ble.status:
 
+          
 #example to connect to multiple locks
 lock:
   - platform: template
