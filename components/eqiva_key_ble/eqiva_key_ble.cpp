@@ -24,6 +24,7 @@ void EqivaKeyBle::dump_config() {
 bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t esp_gattc_if,
                                     esp_ble_gattc_cb_param_t *param) {
 
+  this->mac_address_sensor_->publish_state(this->address_str());
 
   if (!BLEClientBase::gattc_event_handler(event, esp_gattc_if, param))
     return false;
@@ -38,12 +39,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         }
         if (read != NULL) {
           free(read);
-        }
-        if (currentMsg != NULL) {
-          free(currentMsg);
-        }
-        if (requestPair) {
-          requestPair = false;
         }
         clientState.remote_session_nonce.clear();
         clientState.local_session_nonce.clear();

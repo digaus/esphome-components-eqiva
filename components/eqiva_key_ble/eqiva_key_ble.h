@@ -96,7 +96,7 @@ class EqivaKeyBle : public BLEClientBase {
             if (card_key.length() > 0) {
                 for(char &c : card_key)
                     c = tolower(c);
-                clientState.card_key = card_key.substr(14,32);
+                clientState.card_key = card_key.substr(14, 32);
             }
         }
         void set_turn_left(bool turn_left) { clientState.turn_left = turn_left; }
@@ -109,6 +109,7 @@ class EqivaKeyBle : public BLEClientBase {
         void set_lock_status_sensor(text_sensor::TextSensor *lock_status_sensor) { this->lock_status_sensor_ = lock_status_sensor; }
         void set_user_key_sensor(text_sensor::TextSensor *user_key_sensor) { this->user_key_sensor_ = user_key_sensor; }
         void set_user_id_sensor(text_sensor::TextSensor *user_id_sensor) { this->user_id_sensor_ = user_id_sensor; }
+        void set_mac_address_sensor(text_sensor::TextSensor *mac_address_sensor) { this->mac_address_sensor_ = mac_address_sensor; }
 
         void set_state(esphome::esp32_ble_tracker::ClientState st) {
             this->state_ = st;
@@ -125,6 +126,7 @@ class EqivaKeyBle : public BLEClientBase {
         text_sensor::TextSensor *lock_status_sensor_{nullptr};
         text_sensor::TextSensor *user_key_sensor_{nullptr};
         text_sensor::TextSensor *user_id_sensor_{nullptr};
+        text_sensor::TextSensor *mac_address_sensor_{nullptr};
 
 };
 
@@ -152,8 +154,13 @@ class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
     TEMPLATABLE_VALUE(int, user_id)
     TEMPLATABLE_VALUE(std::string, user_key)
     public:
-        void play(Ts... x) override { 
+        void play(Ts... x) override {
+
             auto mac_address = this->mac_address_.value(x...);
+            auto current_mac_address = this->parent_->get_address();
+            if (mac_address < current_mac_address || mac_address > current_mac_address) {
+                this->parent_->disconnect();
+            }
             auto user_id = this->user_id_.value(x...);
             auto user_key = this->user_key_.value(x...);
             this->parent_->set_user_id(user_id);
@@ -164,8 +171,12 @@ class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
 
 template<typename... Ts>
 class EqivaDisconnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
- public:
-  void play(Ts... x) override { this->parent_->disconnect(); }
+    public:
+        void play(Ts... x) override {
+            this->parent_->set_user_id(255);
+            this->parent_->set_user_key("");
+            this->parent_->disconnect();
+        }
 };
 
 template<typename... Ts>

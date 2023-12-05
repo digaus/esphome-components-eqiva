@@ -97,8 +97,12 @@ eqiva_key_ble:
 
 text_sensor: 
   - platform: eqiva_key_ble
+    mac_address: 
+      name: "Mac Address"
+      id: mac_address
     lock_status: 
       name: "Lock Status"
+      id: lock_status
     low_battery:
       name: "Low Battery"
     lock_ble_state:
@@ -109,3 +113,76 @@ text_sensor:
       name: "User Key"
     # on_raw_value:
             # then:   Do stuff on state change (!lambda "return x") 
+
+
+
+#example to connect to multiple locks
+lock:
+  - platform: template
+    name: "Lock 1"
+    lambda: |-
+      if (id(mac_address).state != "00:12:34:56:42:88") {
+        return {};
+      }
+      if (id(lock_status).state == "LOCKED") {
+        return LOCK_STATE_LOCKED;
+      } else if (id(lock_status).state == "UNLOCKED" || id(lock_status).state == "OPENED") {
+        return LOCK_STATE_UNLOCKED;
+      } else if (id(lock_status).state == "UNKNOWN") {
+        return LOCK_STATE_JAMMED;
+      } else {
+        return LOCK_STATE_LOCKED;
+      }
+    lock_action:
+      - eqiva_key_ble.connect:
+            mac_address: 00:12:34:56:42:88
+            user_id: 1
+            user_key: 1234567891234567897234696139787E
+      - eqiva_key_ble.lock:
+    unlock_action:
+      - eqiva_key_ble.connect:
+            mac_address: 00:12:34:56:42:88
+            user_id: 1
+            user_key: 1234567891234567897234696139787E
+      - eqiva_key_ble.unlock:
+    open_action:
+      - eqiva_key_ble.connect:
+            mac_address: 00:12:34:56:42:88
+            user_id: 1
+            user_key: 1234567891234567897234696139787E
+      - eqiva_key_ble.open:
+
+lock:
+  - platform: template
+    name: "Lock 2"
+    lambda: |-
+      if (id(mac_address).state != "11:12:34:56:42:88") {
+        return {};
+      }
+      if (id(lock_status).state == "LOCKED") {
+        return LOCK_STATE_LOCKED;
+      } else if (id(lock_status).state == "UNLOCKED" || id(lock_status).state == "OPENED") {
+        return LOCK_STATE_UNLOCKED;
+      } else if (id(lock_status).state == "UNKNOWN") {
+        return LOCK_STATE_JAMMED;
+      } else {
+        return LOCK_STATE_LOCKED;
+      }
+    lock_action:
+      - eqiva_key_ble.connect:
+            mac_address: 11:12:34:56:42:88
+            user_id: 1
+            user_key: 1234567891234567897234696139787E
+      - eqiva_key_ble.lock:
+    unlock_action:
+      - eqiva_key_ble.connect:
+            mac_address: 11:12:34:56:42:88
+            user_id: 1
+            user_key: 1234567891234567897234696139787E
+      - eqiva_key_ble.unlock:
+    open_action:
+      - eqiva_key_ble.connect:
+            mac_address: 11:12:34:56:42:88
+            user_id: 1
+            user_key: 1234567891234567897234696139787E
+      - eqiva_key_ble.open:
