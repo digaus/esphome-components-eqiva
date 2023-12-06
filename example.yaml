@@ -6,7 +6,10 @@ esp32:
   board: esp32dev
   framework:
     type: esp-idf
-
+    # Uncomment below for ESP32-C3 if you have unexpected reboots when encrypting data
+    # sdkconfig_options:
+      # CONFIG_BOOTLOADER_WDT_TIME_MS: "60000"
+  
 # Enable logging
 logger:
   
@@ -73,6 +76,12 @@ wifi:
   ap:
     ssid: "Esphome-Web-Eqiva-Lock"
     password: "LMLtYr4bSiPg"
+  # Uncomment below for ESP32-C3, see https://github.com/esphome/issues/issues/2941#issuecomment-1842369092
+  # on_connect:
+  #   - esp32_ble_tracker.start_scan:
+  #      continuous: true
+  # on_disconnect:
+  #   - esp32_ble_tracker.stop_scan:
 
 captive_portal:
     
@@ -82,8 +91,10 @@ external_components:
   # refresh: 0s
 
 esp32_ble_tracker:
-  # scan_parameters:
-  #  window: 300ms
+   scan_parameters:
+    window: 300ms
+    # Uncomment below for ESP32-C3, see https://github.com/esphome/issues/issues/2941#issuecomment-1842369092
+    # continuous: false
 
 eqiva_ble:
 
@@ -129,71 +140,37 @@ time:
 
           
 #example to connect to multiple locks
+# if (id(mac_address).state != "00:12:34:56:42:88") { return {}; }
 lock:
   - platform: template
     name: "Lock 1"
     lambda: |-
-      if (id(mac_address).state != "00:12:34:56:42:88") {
-        return {};
-      }
       if (id(lock_status).state == "LOCKED") {
         return LOCK_STATE_LOCKED;
       } else if (id(lock_status).state == "UNLOCKED" || id(lock_status).state == "OPENED") {
         return LOCK_STATE_UNLOCKED;
+      } else if(id(lock_status).state == "MOVING") {
+        return {};
       } else if (id(lock_status).state == "UNKNOWN") {
         return LOCK_STATE_JAMMED;
-      } else {
-        return LOCK_STATE_LOCKED;
-      }
+      } 
+      return LOCK_STATE_LOCKED;
     lock_action:
-      - eqiva_key_ble.connect:
-            mac_address: 00:12:34:56:42:88
-            user_id: 1
-            user_key: 1234567891234567897234696139787E
+      #- eqiva_key_ble.connect:
+      #      mac_address: 00:12:34:56:42:88
+      #      user_id: 1
+      #      user_key: 1234567891234567897234696139787E
       - eqiva_key_ble.lock:
     unlock_action:
-      - eqiva_key_ble.connect:
-            mac_address: 00:12:34:56:42:88
-            user_id: 1
-            user_key: 1234567891234567897234696139787E
+      #- eqiva_key_ble.connect:
+      #      mac_address: 00:12:34:56:42:88
+      #      user_id: 1
+      #      user_key: 1234567891234567897234696139787E
       - eqiva_key_ble.unlock:
     open_action:
-      - eqiva_key_ble.connect:
-            mac_address: 00:12:34:56:42:88
-            user_id: 1
-            user_key: 1234567891234567897234696139787E
+      #- eqiva_key_ble.connect:
+      #      mac_address: 00:12:34:56:42:88
+      #      user_id: 1
+      #      user_key: 1234567891234567897234696139787E
       - eqiva_key_ble.open:
 
-  - platform: template
-    name: "Lock 2"
-    lambda: |-
-      if (id(mac_address).state != "11:12:34:56:42:88") {
-        return {};
-      }
-      if (id(lock_status).state == "LOCKED") {
-        return LOCK_STATE_LOCKED;
-      } else if (id(lock_status).state == "UNLOCKED" || id(lock_status).state == "OPENED") {
-        return LOCK_STATE_UNLOCKED;
-      } else if (id(lock_status).state == "UNKNOWN") {
-        return LOCK_STATE_JAMMED;
-      } else {
-        return LOCK_STATE_LOCKED;
-      }
-    lock_action:
-      - eqiva_key_ble.connect:
-            mac_address: 11:12:34:56:42:88
-            user_id: 1
-            user_key: 1234567891234567897234696139787E
-      - eqiva_key_ble.lock:
-    unlock_action:
-      - eqiva_key_ble.connect:
-            mac_address: 11:12:34:56:42:88
-            user_id: 1
-            user_key: 1234567891234567897234696139787E
-      - eqiva_key_ble.unlock:
-    open_action:
-      - eqiva_key_ble.connect:
-            mac_address: 11:12:34:56:42:88
-            user_id: 1
-            user_key: 1234567891234567897234696139787E
-      - eqiva_key_ble.open:
