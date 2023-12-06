@@ -18,6 +18,8 @@ api:
   encryption:
     key: "yourkey"
   services:
+
+  # Set mounting options
   - service: settings
     variables:
       turn_left: bool
@@ -28,6 +30,8 @@ api:
           turn_left: !lambda 'return turn_left;'
           key_horizontal: !lambda 'return key_horizontal;'
           lock_turns: !lambda 'return lock_turns;'
+
+  # Manual connect, can be used for automations/multiple locks
   - service: connect
     variables:
       # mac_address: string // Unable to pass a mac_address via lambda :?
@@ -39,9 +43,12 @@ api:
           # mac_address: !lambda 'return mac_address;'
           user_id: !lambda 'return user_id;'
           user_key: !lambda 'return user_key;'
+  # Manual disconnect, can be used for automations/multiple locks
   - service: disconnect
     then:
       - eqiva_key_ble.disconnect:
+  # Pair a new user. Takes the card_key of the QR Code as a parameter, outputs resulting user_id and user_key via text_sensor
+  # Make sure to activate pairing of the lock itself
   - service: pair
     variables:
       card_key: string
@@ -66,7 +73,6 @@ web_server:
   include_internal: true
   local: true
   port: 80
-
 
 wifi:
   ssid: !secret wifi_ssid
@@ -100,7 +106,7 @@ eqiva_ble:
 
 eqiva_key_ble:
   id: key_ble
-  # Below are optional and can be passed via new connect service
+  # Below can left empty if you use use connect service instead
   mac_address: 00:12:34:56:42:88
   user_id: 0
   user_key: 12345678636F6763386A726E33746F35
@@ -126,8 +132,8 @@ text_sensor:
             # then:   Do stuff on state change (!lambda "return x") 
 
 
-# Call Status every 4 minutes because lock seems to disconnect after 5 minutes of inactivity
-# need to watch battery consumption
+# Call status every 4 minutes because lock seems to disconnect after 5 minutes of inactivity
+# need to watch battery consumption, could also do some other time or present based approaches
 time:
   - platform: sntp
     # ...
@@ -139,7 +145,8 @@ time:
           - eqiva_key_ble.status:
 
           
-#example to connect to multiple locks
+# Lock component for HA, can also create two locks and use connect service to connect/control two different locks
+# One ESP per lock is still recommended
 # if (id(mac_address).state != "00:12:34:56:42:88") { return {}; }
 lock:
   - platform: template
