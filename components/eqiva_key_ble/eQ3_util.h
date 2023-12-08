@@ -1,3 +1,7 @@
+//
+// Created by marius on 16.12.18.
+//
+
 #ifndef DOOR_OPENER_UTIL_H
 #define DOOR_OPENER_UTIL_H
 
@@ -11,4 +15,6 @@ std::string compute_nonce(char msg_type_id, std::string session_open_nonce, uint
 int generic_ceil(int value, int step, int minimum);
 std::string compute_auth_value(std::string data, char msg_type_id, std::string session_open_nonce, uint16_t security_counter, std::string key);
 std::string crypt_data(std::string data, char msg_type_id, std::string session_open_nonce, uint16_t security_counter, std::string key);
+uint64_t string_to_mac(std::string const& s);
+
 #endif //DOOR_OPENER_UTIL_H

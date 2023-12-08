@@ -32,13 +32,12 @@ EqivaConnect = eqiva_key_ble_ns.class_("EqivaConnect", automation.Action)
 EqivaDisconnect = eqiva_key_ble_ns.class_("EqivaDisconnect", automation.Action)
 EqivaSettings = eqiva_key_ble_ns.class_("EqivaSettings", automation.Action)
 
-
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(EqivaKeyBle),
-            cv.Optional(CONF_MAC_ADDRESS): cv.mac_address,
-            cv.Optional(CONF_USER_ID, default=255): cv.one_of(0, 1, 2, 3, 4, 5, 6, 7, 255, int=True),
+            cv.Optional(CONF_MAC_ADDRESS): cv.templatable(cv.mac_address),
+            cv.Optional(CONF_USER_ID, default=255): cv.one_of(0, 1, 2, 3, 4, 5, 6, 7, 255),
             cv.Optional(CONF_USER_KEY, default=""): cv.string,
         }
     )
@@ -86,7 +85,7 @@ async def eqiva_key_ble_settings_to_code(config, action_id, template_arg, args):
     cv.Schema(
         {
             cv.GenerateID(): cv.use_id(EqivaKeyBle),
-            cv.Required(CONF_MAC_ADDRESS): cv.mac_address,
+            cv.Required(CONF_MAC_ADDRESS): cv.templatable(cv.string),
             cv.Required(CONF_USER_ID): cv.templatable(cv.one_of(0, 1, 2, 3, 4, 5, 6, 7, int=True)),
             cv.Required(CONF_USER_KEY): cv.templatable(cv.string),
         }
@@ -95,7 +94,7 @@ async def eqiva_key_ble_settings_to_code(config, action_id, template_arg, args):
 async def eqiva_key_ble_connect_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_ID])
-    template_ = await cg.templatable(config[CONF_MAC_ADDRESS].as_hex, args, cg.uint64)
+    template_ = await cg.templatable(config[CONF_MAC_ADDRESS], args, cg.std_string)
     cg.add(var.set_mac_address(template_))
     template_ = await cg.templatable(config[CONF_USER_ID], args, cg.int_)
     cg.add(var.set_user_id(template_))

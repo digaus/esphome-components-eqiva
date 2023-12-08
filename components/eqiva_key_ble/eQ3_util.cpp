@@ -11,6 +11,7 @@
 
 using std::string;
 
+
 // -----------------------------------------------------------------------------
 // --[string_to_hex]------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -164,4 +165,26 @@ std::string crypt_data(std::string data, char msg_type_id, std::string session_o
     }
     std::string ret = xor_array(data, xor_data);
     return ret;
+}
+
+// -----------------------------------------------------------------------------
+// --[string to mac]---------------------------------------------------------------
+// -----------------------------------------------------------------------------
+uint64_t string_to_mac(std::string const& s) {
+    unsigned char a[6];
+    int last = -1;
+    int rc = sscanf(s.c_str(), "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%n",
+                    a + 0, a + 1, a + 2, a + 3, a + 4, a + 5,
+                    &last);
+    if(rc != 6 || s.size() != last)
+        return 0;
+    return
+        uint64_t(a[0]) << 40 |
+        uint64_t(a[1]) << 32 | ( 
+            // 32-bit instructions take fewer bytes on x86, so use them as much as possible.
+            uint32_t(a[2]) << 24 | 
+            uint32_t(a[3]) << 16 |
+            uint32_t(a[4]) << 8 |
+            uint32_t(a[5])
+        );
 }

@@ -34,13 +34,12 @@ api:
   # Manual connect, can be used for automations/multiple locks
   - service: connect
     variables:
-      # mac_address: string // Unable to pass a mac_address via lambda :?
+      mac_address: string
       user_id: int
       user_key: string
     then:
       - eqiva_key_ble.connect:
-          mac_address: 00:12:34:56:42:88
-          # mac_address: !lambda 'return mac_address;'
+          mac_address: !lambda 'return mac_address;'
           user_id: !lambda 'return user_id;'
           user_key: !lambda 'return user_key;'
   # Manual disconnect, can be used for automations/multiple locks
@@ -88,6 +87,107 @@ wifi:
   #      continuous: true
   # on_disconnect:
   #   - esp32_ble_tracker.stop_scan:
+
+  # Use below to apply saved input parameters on boot
+    on_connect:
+      - eqiva_key_ble.connect:
+          mac_address: !lambda 'return id(mac_address).state;' 
+          user_id: !lambda 'return id(user_id).state;'
+          user_key: !lambda 'return id(user_key).state;'
+
+#button, number and text input for pairing and setting mac/user_id/user-key via UI
+button:
+  - platform: template
+    id: ble_settings
+    name: BLE Settings _Save_
+    icon: "mdi:content-save"
+    on_press:
+      - eqiva_key_ble.connect:
+          mac_address: !lambda 'return id(mac_address).state;' 
+          user_id: !lambda 'return id(user_id).state;'
+          user_key: !lambda 'return id(user_key).state;'
+  
+  - platform: template
+    id: ble_disconnect
+    name: BLE Settings _Disconnect_
+    icon: "mdi:clear"
+    on_press:
+      - eqiva_key_ble.disconnect:
+  - platform: template
+    id: ble_pair
+    name: BLE Pair _Start_
+    icon: "mdi:check-underline"
+    on_press:
+      - eqiva_key_ble.pair:
+          card_key: !lambda 'return id(card_key).state;' 
+
+  - platform: template
+    id: lock_settings
+    name: Lock Settings _Apply_
+    icon: "mdi:check-underline"
+    on_press:
+      - eqiva_key_ble.settings:
+          turn_left: !lambda 'return id(direction).state == "Left";' 
+          key_horizontal: !lambda 'return id(position).state == "Horizontal";'
+          lock_turns: !lambda 'return atoi(id(turns).state.c_str());'
+          
+number:
+  - platform: template
+    mode: box
+    name: BLE Settings User ID
+    id: user_id
+    max_value: 7
+    min_value: 0
+    step: 1
+    optimistic: true
+    restore_value: true
+
+text:
+  - platform: template
+    mode: text
+    name: BLE Settings Mac Address
+    id: mac_address
+    optimistic: true
+    restore_value: true
+  - platform: template
+    mode: text
+    name: BLE Settings User Key
+    id: user_key
+    optimistic: true
+    restore_value: true
+  - platform: template
+    mode: text
+    name: BLE Pair Card Key
+    id: card_key
+    optimistic: true
+
+select:
+  - platform: template
+    name: Lock Settings Close Direction
+    id: direction
+    options:
+     - "Left"
+     - "Right"
+    optimistic: true
+  - platform: template
+    name: Lock Settings Key Position
+    id: position
+    options:
+     - "Vertical"
+     - "Horizontal"
+    optimistic: true
+  - platform: template
+    name: Lock Settings Turns
+    id: turns
+    options:
+     - "1"
+     - "2"
+     - "3"
+     - "4"
+    optimistic: true
+
+
+
 
 captive_portal:
     

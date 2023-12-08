@@ -36,7 +36,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
       if (this->state() == espbt::ClientState::ESTABLISHED) {
         clientState.remote_session_nonce.clear();
         clientState.local_session_nonce.clear();
-  
         write = this->get_characteristic(esp32_ble_tracker::ESPBTUUID::from_raw("58e06900-15d8-11e6-b737-0002a5d5c51b"), esp32_ble_tracker::ESPBTUUID::from_raw("3141dd40-15db-11e6-a24b-0002a5d5c51b"));
         ESP_LOGD(TAG, "Write (UUID): %s  ",  write->uuid.to_string().c_str());
         read = this->get_characteristic(esp32_ble_tracker::ESPBTUUID::from_raw("58e06900-15d8-11e6-b737-0002a5d5c51b"), esp32_ble_tracker::ESPBTUUID::from_raw("359d4820-15db-11e6-82bd-0002a5d5c51b"));
@@ -84,7 +83,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         if (frag.isLast()) {
           ESP_LOGD(TAG, "LAST");
         } else {
-          ESP_LOGD(TAG, "NOT_LAST");
+          ESP_LOGD(TAG, "NOT_LAST, TODO");
           /*eQ3Message::FragmentAckMessage ack(frag.getStatusByte());
           ESP_LOGD(TAG, "Send message: %s ", string_to_hex(ack.data).c_str());
           auto *write = this->get_characteristic(esp32_ble_tracker::ESPBTUUID::from_raw("58e06900-15d8-11e6-b737-0002a5d5c51b"), esp32_ble_tracker::ESPBTUUID::from_raw("3141dd40-15db-11e6-a24b-0002a5d5c51b"));
@@ -241,11 +240,11 @@ void EqivaKeyBle::init() {
     }
 }
 void EqivaKeyBle::sendCommand(CommandType command) {
-  if (command == 3) {
+  if (command == REQUEST_STATUS) {
       auto * msg = new eQ3Message::StatusRequestMessage;
       sendMessage(msg, false);
   } else {
-      auto msg = new eQ3Message::CommandMessage(command);
+      auto msg = new eQ3Message::CommandMessage((char) command);
       sendMessage(msg, false);
   }
 }
@@ -323,7 +322,6 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
     if (((sendingNonce == false && clientState.remote_session_nonce.length() > 0) || nonce) && this->state() == espbt::ClientState::ESTABLISHED) {
       std::string data;
       if (msg->isSecure()) {
-          ESP_LOGD(TAG, "prepare secure Send message");
           std::string padded_data;
           padded_data.append(msg->encode(&clientState));
           int pad_to = generic_ceil(padded_data.length(), 15, 8);
@@ -337,11 +335,9 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
           data.append(compute_auth_value(padded_data, msg->id, clientState.remote_session_nonce, clientState.local_security_counter, clientState.user_key));
           clientState.local_security_counter++;
       } else {
-          ESP_LOGD(TAG, "prepare Send message");
           data.append(1, msg->id);
           data.append(msg->encode(&clientState));
       }
-      ESP_LOGD(TAG, "prepare Send message done");
     
       // fragment
       int chunks = data.length() / 15;
@@ -355,7 +351,6 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
               frag.data.append(16 - (frag.data.length() % 16), 0);  // padding
           sendQueue.push(frag);
           sendFragment();
-          ESP_LOGD(TAG, "Send message: %s ", string_to_hex(frag.data).c_str());
       }
       free(msg);
       return true;
@@ -375,8 +370,6 @@ void EqivaKeyBle::sendFragment() {
     std::string data = sendQueue.front().data;
     sendQueue.pop();
     write->write_value((uint8_t *) (data.c_str()), 16, ESP_GATT_WRITE_TYPE_RSP);
-    ESP_LOGD(TAG, "Send frag done: %s ", string_to_hex(data).c_str());
-
 }
 
 }  // namespace eqiva_key_ble

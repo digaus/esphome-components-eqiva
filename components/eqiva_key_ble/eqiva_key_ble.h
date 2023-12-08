@@ -115,7 +115,6 @@ class EqivaKeyBle : public BLEClientBase {
             this->state_ = st;
             this->lock_ble_state_sensor_->publish_state(getClientState()); 
         };
-
         void dump_config() override;
         bool gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                                 esp_ble_gattc_cb_param_t *param) override;
@@ -150,7 +149,7 @@ class EqivaSettings : public Action<Ts...>, public Parented<EqivaKeyBle> {
 
 template<typename... Ts>
 class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
-    TEMPLATABLE_VALUE(uint64_t, mac_address)
+    TEMPLATABLE_VALUE(std::string, mac_address)
     TEMPLATABLE_VALUE(int, user_id)
     TEMPLATABLE_VALUE(std::string, user_key)
     public:
@@ -158,14 +157,16 @@ class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
 
             auto mac_address = this->mac_address_.value(x...);
             auto current_mac_address = this->parent_->get_address();
-            if (mac_address < current_mac_address || mac_address > current_mac_address) {
+            if (current_mac_address != 0 && (string_to_mac(mac_address) < current_mac_address || string_to_mac(mac_address) > current_mac_address)) {
                 this->parent_->disconnect();
             }
             auto user_id = this->user_id_.value(x...);
             auto user_key = this->user_key_.value(x...);
             this->parent_->set_user_id(user_id);
             this->parent_->set_user_key(user_key);
-            this->parent_->set_address(mac_address);
+            this->parent_->set_address(string_to_mac(mac_address));
+            ESP_LOGD("ESP Eqiva", " Address: %s, %s", this->parent_->address_str().c_str(), mac_address.c_str());
+
         }
 };
 
@@ -173,9 +174,10 @@ template<typename... Ts>
 class EqivaDisconnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
     public:
         void play(Ts... x) override {
-            this->parent_->set_user_id(255);
-            this->parent_->set_user_key("");
+            // this->parent_->set_user_id(255);
+            // this->parent_->set_user_key("");
             this->parent_->disconnect();
+            this->parent_->set_address(1);
         }
 };
 
