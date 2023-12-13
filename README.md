@@ -222,7 +222,7 @@ lock:
 ```
 
 
-# Initial Pairing:
+# Initial Pairing (after you have done the previous steps):
 
 For connecting and controlling a lock we need the mac_address (see # Discover new lock), the user_id and the user_key
 
