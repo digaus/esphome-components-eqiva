@@ -222,10 +222,10 @@ lock:
 ```
 
 
-# Initial Pairing (after you have done the previous steps):
+# Initial Pairing:
+Please do previous steps first!
 
 For connecting and controlling a lock we need the mac_address (see # Discover new lock), the user_id and the user_key
-
 The user_id and user_key can only be retrieved while pairing for which we need the card_key.
 
 1. Get the mac_address
