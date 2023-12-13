@@ -355,7 +355,7 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
       free(msg);
       return true;
     } else {
-      ESP_LOGI(TAG, "Waiting for connection... (sendingNonce: %s) (remoteSessionNonce: %s) (remoteSessionNonce: %s) (clientStateEstablished: %s)", sendingNonce ? 'true' : 'false', clientState.remote_session_nonce.length() > 0 ? 'true' : 'false', this->state() == espbt::ClientState::ESTABLISHED ? 'true' : 'false');
+      ESP_LOGI(TAG, "Waiting for connection... (sendingNonce: %s) (remoteSessionNonce: %s) (remoteSessionNonce: %s) (clientStateEstablished: %s)", sendingNonce ? "true" : "false", clientState.remote_session_nonce.length() > 0 ? "true" : "false", this->state() == espbt::ClientState::ESTABLISHED ? "true" : "false");
       currentMsg = msg;
       return false;
     }
