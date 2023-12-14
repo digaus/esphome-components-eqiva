@@ -17,60 +17,12 @@ logger:
 api:
   encryption:
     key: "yourkey"
-  services:
-
-  # Set mounting options
-  - service: settings
-    variables:
-      turn_left: bool
-      key_horizontal: bool
-      lock_turns: int
-    then:
-      - eqiva_key_ble.settings:
-          turn_left: !lambda 'return turn_left;'
-          key_horizontal: !lambda 'return key_horizontal;'
-          lock_turns: !lambda 'return lock_turns;'
-
-  # Manual connect, can be used for automations/multiple locks
-  - service: connect
-    variables:
-      mac_address: string
-      user_id: int
-      user_key: string
-    then:
-      - eqiva_key_ble.connect:
-          mac_address: !lambda 'return mac_address;'
-          user_id: !lambda 'return user_id;'
-          user_key: !lambda 'return user_key;'
-  # Manual disconnect, can be used for automations/multiple locks
-  - service: disconnect
-    then:
-      - eqiva_key_ble.disconnect:
-  # Pair a new user. Takes the card_key of the QR Code as a parameter, outputs resulting user_id and user_key via text_sensor
-  # Make sure to activate pairing of the lock itself
-  - service: pair
-    variables:
-      card_key: string
-    then:
-      - eqiva_key_ble.pair:
-          card_key: !lambda 'return card_key;'
-  - service: lock
-    then:
-      - eqiva_key_ble.lock:
-  - service: unlock
-    then:
-      - eqiva_key_ble.unlock:
-  - service: open
-    then:
-      - eqiva_key_ble.open:
-  - service: status
-    then:
-      - eqiva_key_ble.status:
+    
 ota:
 
 web_server:
   include_internal: true
-  local: true
+  local: false
   port: 80
 
 wifi:
@@ -80,20 +32,19 @@ wifi:
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
     ssid: "Esphome-Web-Eqiva-Lock"
-    password: "LMLtYr4bSiPg"
-  # Uncomment below for ESP32-C3, see https://github.com/esphome/issues/issues/2941#issuecomment-1842369092
-  # on_connect:
-  #   - esp32_ble_tracker.start_scan:
-  #      continuous: true
-  # on_disconnect:
-  #   - esp32_ble_tracker.stop_scan:
+    password: "12345678"
+  # Activate scan only after wifi connect, see https://github.com/esphome/issues/issues/2941#issuecomment-1842369092
+  on_connect:
+    - esp32_ble_tracker.start_scan:
+       continuous: true
+    - eqiva_key_ble.connect:
+       mac_address: !lambda 'return id(mac_address).state;' 
+       user_id: !lambda 'return id(user_id).state;'
+       user_key: !lambda 'return id(user_key).state;'
+  on_disconnect:
+    - esp32_ble_tracker.stop_scan:
 
-  # Use below to apply saved input parameters on boot
-    on_connect:
-      - eqiva_key_ble.connect:
-          mac_address: !lambda 'return id(mac_address).state;' 
-          user_id: !lambda 'return id(user_id).state;'
-          user_key: !lambda 'return id(user_key).state;'
+      
 
 #button, number and text input for pairing and setting mac/user_id/user-key via UI
 button:
@@ -199,24 +150,23 @@ external_components:
 esp32_ble_tracker:
    scan_parameters:
     window: 300ms
-    # Uncomment below for ESP32-C3, see https://github.com/esphome/issues/issues/2941#issuecomment-1842369092
-    # continuous: false
+    # Activate scan only after wifi connect, see https://github.com/esphome/issues/issues/2941#issuecomment-1842369092
+    continuous: false
 
 eqiva_ble:
 
 eqiva_key_ble:
   id: key_ble
-  # Below can left empty if you use use connect service instead
-  mac_address: 00:12:34:56:42:88
-  user_id: 0
-  user_key: 12345678636F6763386A726E33746F35
+  # Below can left empty because we connect in wifi on_connect
+  # mac_address: 00:12:34:56:42:88
+  # user_id: 0
+  # user_key: 12345678636F6763386A726E33746F35
 
 
 text_sensor: 
   - platform: eqiva_key_ble
     mac_address: 
       name: "Mac Address"
-      id: mac_address
     lock_status: 
       name: "Lock Status"
       id: lock_status
@@ -238,7 +188,7 @@ time:
   - platform: sntp
     # ...
     on_time:
-      # Every 5 minutes
+      # Every 4 minutes
       - seconds: 0
         minutes: /4
         then:
@@ -247,7 +197,6 @@ time:
           
 # Lock component for HA, can also create two locks and use connect service to connect/control two different locks
 # One ESP per lock is still recommended
-# if (id(mac_address).state != "00:12:34:56:42:88") { return {}; }
 lock:
   - platform: template
     name: "Lock 1"
@@ -263,21 +212,9 @@ lock:
       } 
       return LOCK_STATE_LOCKED;
     lock_action:
-      #- eqiva_key_ble.connect:
-      #      mac_address: 00:12:34:56:42:88
-      #      user_id: 1
-      #      user_key: 1234567891234567897234696139787E
       - eqiva_key_ble.lock:
     unlock_action:
-      #- eqiva_key_ble.connect:
-      #      mac_address: 00:12:34:56:42:88
-      #      user_id: 1
-      #      user_key: 1234567891234567897234696139787E
       - eqiva_key_ble.unlock:
-    open_action:
-      #- eqiva_key_ble.connect:
-      #      mac_address: 00:12:34:56:42:88
-      #      user_id: 1
-      #      user_key: 1234567891234567897234696139787E
+    open_action:    
       - eqiva_key_ble.open:
 
