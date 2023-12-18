@@ -13,7 +13,7 @@ namespace eqiva_key_ble {
 static const char *const TAG = "eqiva_key_ble";
 
 void EqivaKeyBle::dump_config() {
-  ESP_LOGCONFIG(TAG, "Eqiva Key-BLE:");
+  ESP_LOGCONFIG(TAG, "Eqiva Key-BLE (1.0):");
   ESP_LOGCONFIG(TAG, "  Address: %s", this->address_str().c_str());
   ESP_LOGCONFIG(TAG, "  UserKey: %s", clientState.user_key.length() > 0 ? string_to_hex(clientState.user_key).c_str() : "");
   ESP_LOGCONFIG(TAG, "  UserId: %d", clientState.user_id);
