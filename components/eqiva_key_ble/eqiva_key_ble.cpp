@@ -23,7 +23,7 @@ void EqivaKeyBle::dump_config() {
 
 bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t esp_gattc_if,
                                     esp_ble_gattc_cb_param_t *param) {
-
+                                      
   this->mac_address_sensor_->publish_state(this->address_str());
 
   if (!BLEClientBase::gattc_event_handler(event, esp_gattc_if, param))
@@ -355,7 +355,16 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
       free(msg);
       return true;
     } else {
-      ESP_LOGI(TAG, "Waiting for connection...");    
+      ESP_LOGI(TAG, "Waiting for connection...");
+      if (sendingNonce) {
+        ESP_LOGI(TAG, "Reason: exchanging nonce");
+      }
+      if (clientState.remote_session_nonce.length() == 0) {
+        ESP_LOGI(TAG, "Reason: no remote session");
+      }
+      if (this->state() != espbt::ClientState::ESTABLISHED) {
+        ESP_LOGI(TAG, "Reason: lock not connected");
+      }
       currentMsg = msg;
       return false;
     }
