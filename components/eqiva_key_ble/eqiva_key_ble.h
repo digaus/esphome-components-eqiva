@@ -26,7 +26,6 @@ class EqivaKeyBle;
 class EqivaKeyBle : public BLEClientBase {
     bool sendMessage(eQ3Message::Message *msg, bool nonce);
     void sendFragment();
-    void sendNonce();
     void init();
     void finishPair();
 
@@ -82,6 +81,7 @@ class EqivaKeyBle : public BLEClientBase {
     public:
         ClientState clientState;
         void startPair();
+        void sendNonce();
         void applySettings();
         void sendCommand(CommandType command);
         void set_user_id(int user_id) {
