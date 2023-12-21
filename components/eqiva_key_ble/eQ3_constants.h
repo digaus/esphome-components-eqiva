@@ -26,8 +26,7 @@ typedef enum {
     LOCK = 0,
     UNLOCK = 1,
     OPEN = 2,
-    REQUEST_STATUS = 3,
-    REQUEST_NONCE = 4
+    REQUEST_STATUS = 3
 } CommandType;
 
 typedef enum {
