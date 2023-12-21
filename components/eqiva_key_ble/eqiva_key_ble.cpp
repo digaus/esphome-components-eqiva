@@ -240,9 +240,7 @@ void EqivaKeyBle::init() {
     }
 }
 void EqivaKeyBle::sendCommand(CommandType command) {
-  if (command == REQUEST_NONCE) {
-      sendNonce();
-  } else if (command == REQUEST_STATUS) {
+  if (command == REQUEST_STATUS) {
       auto * msg = new eQ3Message::StatusRequestMessage;
       sendMessage(msg, false);
   } else {
