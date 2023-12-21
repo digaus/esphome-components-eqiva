@@ -27,6 +27,7 @@ EqivaLock = eqiva_key_ble_ns.class_("EqivaLock", automation.Action)
 EqivaUnlock = eqiva_key_ble_ns.class_("EqivaUnlock", automation.Action)
 EqivaOpen = eqiva_key_ble_ns.class_("EqivaOpen", automation.Action)
 EqivaStatus = eqiva_key_ble_ns.class_("EqivaStatus", automation.Action)
+EqivaNonce = eqiva_key_ble_ns.class_("EqivaNonce", automation.Action)
 EqivaPair = eqiva_key_ble_ns.class_("EqivaPair", automation.Action)
 EqivaConnect = eqiva_key_ble_ns.class_("EqivaConnect", automation.Action)
 EqivaDisconnect = eqiva_key_ble_ns.class_("EqivaDisconnect", automation.Action)
@@ -187,6 +188,20 @@ async def eqiva_key_ble_open_to_code(config, action_id, template_arg, args):
     ),
 )
 async def eqiva_key_ble_status_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_ID])
+    return var
+
+@automation.register_action(
+    "eqiva_key_ble.nonce",
+    EqivaNonce,
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.use_id(EqivaKeyBle),
+        }
+    ),
+)
+async def eqiva_key_ble_nonce_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_ID])
     return var
