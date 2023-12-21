@@ -216,7 +216,11 @@ class EqivaStatus : public Action<Ts...>, public Parented<EqivaKeyBle> {
   void play(Ts... x) override { this->parent_->sendCommand(REQUEST_STATUS); }
 };
 
-
+template<typename... Ts>
+class EqivaNonce : public Action<Ts...>, public Parented<EqivaKeyBle> {
+ public:
+  void play(Ts... x) override { this->parent_->sendNonce(); }
+};
 
 }  // namespace eqiva_key_ble
 }  // namespace esphome
