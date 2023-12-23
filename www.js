@@ -9,7 +9,8 @@ var saveSvg = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -9
 document.head.insertAdjacentHTML('afterbegin', '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.3.67/css/materialdesignicons.min.css">');
 document.head.insertAdjacentHTML('afterbegin', '<meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">');
 
-const evtSource = new EventSource("http://192.168.3.141/events");
+var link = location.href;
+const evtSource = new EventSource(`${link}events`);
 evtSource.addEventListener('state' , (ev) => {
     const data = JSON.parse(ev.data);
     const id = '' + data.id;
@@ -147,7 +148,7 @@ window.setValue = function setValue(id) {
     var valueType = type === 'select' ? 'option': 'value';
     var currentValue =  elements.find((e) => e.id === id)?.value;
     if (value !== currentValue) {
-        fetch(`${location.href}${type}/${el}/set?${valueType}=${encodeURIComponent(value)}`, {
+        fetch(`${link}${type}/${el}/set?${valueType}=${encodeURIComponent(value)}`, {
             method: "POST",
             headers: {
                 'Content-Type': 'text/plain;charset=UTF-8'
@@ -161,5 +162,5 @@ window.setValue = function setValue(id) {
 window.buttonPress = function buttonPress(id, action) {
     var type = id.split('-')[0];
     var el = id.split('-')[1];
-    fetch(`${location.href}${type}/${el}/${encodeURIComponent(action)}`, {method: "POST"});
+    fetch(`${link}${type}/${el}/${encodeURIComponent(action)}`, {method: "POST"});
 }
