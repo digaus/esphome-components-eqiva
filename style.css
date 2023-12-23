@@ -15,7 +15,7 @@
     width: 100%;
     border-radius: 10px;
     margin: 20px 0;
-    box-shadow: 0 3px 6px rgba(51, 51, 51, 0.16), 0 3px 6px rgba(68, 68, 68, 0.23);
+    box-shadow: 0 3px 13px rgba(51, 51, 51, 0.16), 0 3px 13px rgba(68, 68, 68, 0.23);
     overflow: hidden;
 }
 
@@ -48,6 +48,8 @@ body {
 }
 
 button {
+    padding: 0;
+    color: black;
     white-space: nowrap;
     border: none;
     border-radius: 20px;
@@ -55,12 +57,37 @@ button {
     height: 40px;
     font-size: 15px;
     cursor: pointer;
-    outline: 2px solid #eeeeee;
+    outline: 2px solid #e7e7e7;
     position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
     justify-content: center;
+
+    -webkit-transition-duration: 0.4s; /* Safari */
+    transition-duration: 0.4s;
+    text-decoration: none;
+    overflow: hidden;
+}
+button:after {
+  content: "";
+  background: white;
+  display: block;
+  position: absolute;
+  padding-top: 300%;
+  padding-left: 350%;
+  margin-left: -20px!important;
+  margin-top: -120%;
+  opacity: 0;
+  border-radius: 25px;
+  transition: all 0.8s
+}
+
+button:active:after {
+  padding: 0;
+  margin: 0;
+  opacity: 1;
+  transition: 0s
 }
 
 button span {
@@ -112,13 +139,18 @@ button:active {
     height: 40px;
     width: 40px;
 }
-
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: white;
+}
 input, select {
     width: 50%;
     margin: 0;
     box-sizing: border-box;
     border: 1px solid lightgray;
     border-radius: 6px;
+    color: black;
 }
 
 input:read-only {
@@ -135,7 +167,7 @@ esp-app *:not(#log) {
 }
 /* Log Styles */
 #log {
-    box-shadow: 0 3px 6px rgba(51, 51, 51, 0.16), 0 3px 6px rgba(68, 68, 68, 0.23);
+    box-shadow: 0 3px 13px rgba(51, 51, 51, 0.16), 0 3px 13px rgba(68, 68, 68, 0.23);
     border-radius: 10px;
     margin-top: 60px;
     position: relative;
@@ -164,11 +196,12 @@ table {
 
 thead {
     border: 1px solid #dfe2e5;
-    line-height: 1rem
+    line-height: 1rem;
 }
 
 td, th {
-    padding: .25rem .5rem
+    padding: .25rem .5rem;
+    font-size: 13px;
 }
 th {
     background-color: #1c1c1c75;
@@ -177,24 +210,27 @@ th {
     top: 0;
     z-index: 1;
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     padding: .5rem .5rem;
 }
 
 
 pre {
-    margin: 0
+    margin: 0;
+    -webkit-text-size-adjust: 100%;
 }
 
+
 .v {
-    color: #888
+    color: #888;
 }
 
 .d {
-    color: #0dd
+    color: #0dd;
 }
 
 .c {
-    color: #ff00ff
+    color: #ff00ff;
 }
 
 .i {
@@ -202,14 +238,14 @@ pre {
 }
 
 .w {
-    color: #ff0
+    color: #ff0;
 }
 
 .e {
     color: red;
-    font-weight: 700
+    font-weight: 700;
 }
 
 .flow-x {
-    overflow-x: auto
+    overflow-x: auto;
 }
