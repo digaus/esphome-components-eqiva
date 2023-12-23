@@ -68,7 +68,7 @@ function renderGroups() {
                 if (!readonly) {
                     type = element.id.startsWith('text-') ? 'text' :  element.id.startsWith('number-') ? 'number' : 'text';
                 }
-                var input = `<input class="inputElement" min="${element.min_value}" max="${element.max_value}" ${readonly ? 'readonly' : ''} type="${type}" value="${ (readonly ? element.state : (element.value + '')) || ''}" onblur="setValue('${element.id}')"/>`;
+                var input = `<input class="inputElement" ${type == 'number' ? 'pattern="[0-9]*" inputmode="numeric"' : ''} min="${element.min_value}" max="${element.max_value}" ${readonly ? 'readonly' : ''} type="${type}" value="${ (readonly ? element.state : (element.value + '')) || ''}" onblur="setValue('${element.id}')"/>`;
                 if (element.option) {
                     input = `<select class="inputElement" onchange="setValue('${element.id}')">${element.option.map((o) => `<option value="${o}" ${element.value == o ? 'selected="selected"' : ''} >${o}</option>`)}</select>`;
                 }
@@ -128,8 +128,8 @@ evtSource.addEventListener('log' , (ev) => {
     };
     logs.push(l);
     logs = logs.slice(-100);
-    Array.from(document.getElementById('log')?.childNodes || []).forEach((child) =>  document.getElementById('log').removeChild(child))
-    document.getElementById('log')?.insertAdjacentHTML('afterbegin', `<div>Logs</div><table><thead><tr><th>Time</th><th>level</th><th>Tag</th><th>Message</th></tr></thead><tbody>${logs.map(r=>`<tr class="${r.type}"><td>${r.when}</td><td>${r.level}</td><td>${r.tag}</td><td><pre>${r.detail}</pre></td></tr>`).join('')}</tbody></table>`);
+    document.getElementById('log')?.querySelector('tbody')?.parentElement?.removeChild(document.getElementById('log')?.querySelector('tbody'));
+    document.getElementById('log')?.querySelector('table')?.insertAdjacentHTML('beforeend', `<tbody>${logs.map(r=>`<tr class="${r.type}"><td>${r.when}</td><td>${r.level}</td><td>${r.tag}</td><td><pre>${r.detail}</pre></td></tr>`).join('')}</tbody>`);
     
 })
 
@@ -140,7 +140,7 @@ function removeElement(id) {
     }
 }
 
-function setValue(id) {
+window.setValue = function setValue(id) {
     var type = id.split('-')[0];
     var el = id.split('-')[1];
     var value = document.getElementById(id).querySelector('.inputElement').value;
@@ -158,7 +158,7 @@ function setValue(id) {
 
 }
 
-function buttonPress(id, action) {
+window.buttonPress = function buttonPress(id, action) {
     var type = id.split('-')[0];
     var el = id.split('-')[1];
     fetch(`${location.href}${type}/${el}/${encodeURIComponent(action)}`, {method: "POST"});
