@@ -192,16 +192,16 @@ async def eqiva_key_ble_status_to_code(config, action_id, template_arg, args):
     await cg.register_parented(var, config[CONF_ID])
     return var
 
-@automation.register_action(
-    "eqiva_key_ble.nonce",
-    EqivaNonce,
-    cv.Schema(
-        {
-            cv.GenerateID(): cv.use_id(EqivaKeyBle),
-        }
-    ),
-)
-async def eqiva_key_ble_nonce_to_code(config, action_id, template_arg, args):
-    var = cg.new_Pvariable(action_id, template_arg)
-    await cg.register_parented(var, config[CONF_ID])
-    return var
+#@automation.register_action(
+#    "eqiva_key_ble.nonce",
+#    EqivaNonce,
+#    cv.Schema(
+#        {
+#            cv.GenerateID(): cv.use_id(EqivaKeyBle),
+#        }
+#    ),
+#)
+#async def eqiva_key_ble_nonce_to_code(config, action_id, template_arg, args):
+#    var = cg.new_Pvariable(action_id, template_arg)
+#    await cg.register_parented(var, config[CONF_ID])
+#    return var
