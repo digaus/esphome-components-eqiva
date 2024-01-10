@@ -66,7 +66,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
     case ESP_GATTC_WRITE_CHAR_EVT: {
       ESP_LOGD(TAG, "ESP_GATTC_WRITE_CHAR_EVT");
       unsigned long currentMillis = getTime();
-      ESP_LOGI(TAG, "Send successfull: %d | %d | %d", sending, currentMillis,  currentMillis - sending);
+      ESP_LOGI(TAG, "Send successfull: %lu | %lu | %lu", sending, currentMillis,  currentMillis - sending);
       sending = 0;
       sendFragment();
       break;
