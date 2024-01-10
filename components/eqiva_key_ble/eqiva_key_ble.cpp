@@ -13,7 +13,7 @@ namespace eqiva_key_ble {
 static const char *const TAG = "eqiva_key_ble";
 
 void EqivaKeyBle::dump_config() {
-  ESP_LOGCONFIG(TAG, "Eqiva Key-BLE (1.0):");
+  ESP_LOGCONFIG(TAG, "Eqiva Key-BLE:");
   ESP_LOGCONFIG(TAG, "  Address: %s", this->address_str().c_str());
   ESP_LOGCONFIG(TAG, "  UserKey: %s", clientState.user_key.length() > 0 ? string_to_hex(clientState.user_key).c_str() : "");
   ESP_LOGCONFIG(TAG, "  UserId: %d", clientState.user_id);
@@ -65,7 +65,9 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
     }
     case ESP_GATTC_WRITE_CHAR_EVT: {
       ESP_LOGD(TAG, "ESP_GATTC_WRITE_CHAR_EVT");
-      sending = false;
+      unsigned long currentMillis = getTime();
+      ESP_LOGI(TAG, "Send successfull: %d | %d | %d", sending, currentMillis,  currentMillis - sending);
+      sending = 0;
       sendFragment();
       break;
     }
@@ -355,31 +357,49 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
       free(msg);
       return true;
     } else {
-      ESP_LOGI(TAG, "Waiting for connection...");
-      if (sendingNonce) {
-        ESP_LOGI(TAG, "Reason: exchanging nonce");
+      ESP_LOGI(TAG, "Retaining message...");
+      unsigned long currentMillis = getTime();
+      // ESP_LOGE(TAG, "Millis: %d | %d", sending, currentMillis);
+      if (sending > 0 && currentMillis - sending > 3) {
+        sending = 0;
+        if (sendingNonce) {
+          ESP_LOGI(TAG, "Nonce timeout, sending again...");
+          sendNonce();
+          currentMsg = msg;
+        } else {
+          ESP_LOGI(TAG, "Message timeout, sending again...");
+          currentMsg = msg;
+          sendMessage(currentMsg, false);
+          currentMsg = NULL;
+        }
+      } else {
+        if (sendingNonce) {
+          ESP_LOGI(TAG, "Reason: exchanging nonce");
+        }
+        if (clientState.remote_session_nonce.length() == 0) {
+          ESP_LOGI(TAG, "Reason: no remote session");
+        }
+        if (this->state() != espbt::ClientState::ESTABLISHED) {
+          ESP_LOGI(TAG, "Reason: lock not connected");
+        }
+        currentMsg = msg;
       }
-      if (clientState.remote_session_nonce.length() == 0) {
-        ESP_LOGI(TAG, "Reason: no remote session");
-      }
-      if (this->state() != espbt::ClientState::ESTABLISHED) {
-        ESP_LOGI(TAG, "Reason: lock not connected");
-      }
-      currentMsg = msg;
       return false;
     }
 }
 
 void EqivaKeyBle::sendFragment() {
-    ESP_LOGD(TAG, "Check send frag: %s, %s", sendQueue.empty()  ? "empty" : "not-empty", sending ? "sending" : "not-sending");
+    ESP_LOGD(TAG, "Check send frag: %s, %s", sendQueue.empty()  ? "empty" : "not-empty", sending > 0 ? "sending" : "not-sending");
 
-    if (sendQueue.empty() || sending || this->state_ != espbt::ClientState::ESTABLISHED)
+    if (sendQueue.empty() || sending > 0 || this->state_ != espbt::ClientState::ESTABLISHED)
       return;
-    sending = true;
+    sending = getTime();
+   // ESP_LOGE(TAG, "Sending: %d", sending);
     std::string data = sendQueue.front().data;
     sendQueue.pop();
     write->write_value((uint8_t *) (data.c_str()), 16, ESP_GATT_WRITE_TYPE_RSP);
 }
+
 
 }  // namespace eqiva_key_ble
 }  // namespace esphome
