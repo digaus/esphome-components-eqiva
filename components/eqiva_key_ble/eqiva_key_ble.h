@@ -26,6 +26,7 @@ class EqivaKeyBle;
 class EqivaKeyBle : public BLEClientBase {
     bool sendMessage(eQ3Message::Message *msg, bool nonce);
     void sendFragment();
+    void sendNonce();
     void init();
     void finishPair();
 
@@ -33,9 +34,17 @@ class EqivaKeyBle : public BLEClientBase {
     BLECharacteristic *write;
     BLECharacteristic *read;
     bool sendingNonce;
-    bool sending;
+    unsigned long sending;
     eQ3Message::Message *currentMsg;
     bool requestPair;
+
+    unsigned long getTime() {
+        time_t now;
+        struct tm timeinfo;
+        localtime_r(&now, &timeinfo);
+        time(&now);
+        return now;
+    }
     std::string getClientState() {
         std::string client_state;
         switch(this->state_) {
@@ -81,7 +90,6 @@ class EqivaKeyBle : public BLEClientBase {
     public:
         ClientState clientState;
         void startPair();
-        void sendNonce();
         void applySettings();
         void sendCommand(CommandType command);
         void set_user_id(int user_id) {
@@ -216,11 +224,7 @@ class EqivaStatus : public Action<Ts...>, public Parented<EqivaKeyBle> {
   void play(Ts... x) override { this->parent_->sendCommand(REQUEST_STATUS); }
 };
 
-template<typename... Ts>
-class EqivaNonce : public Action<Ts...>, public Parented<EqivaKeyBle> {
- public:
-  void play(Ts... x) override { this->parent_->sendNonce(); }
-};
+
 
 }  // namespace eqiva_key_ble
 }  // namespace esphome
