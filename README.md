@@ -1,4 +1,4 @@
-Big thanks to previous work done by:  @MariusSchiffer, @tc-maxx, @RoP09, @lumokitho and the original creator @oyooyo
+Big thanks to previous work done by:  [@MariusSchiffer](https://github.com/MariusSchiffer/esp32-keyble), [@tc-maxx](https://github.com/tc-maxx/esp32-keyble), [@lumokitho](https://github.com/lumokitho/esp32-keyble) and the original creator [@oyooyo](https://github.com/oyooyo/keyble)
 
 
 
