@@ -1,3 +1,8 @@
+Big thanks to previous work done by:  @MariusSchiffer, @tc-maxx, @RoP09, @lumokitho and the original creator @oyooyo
+
+
+
+
 # Use esp-idf framework:
 Need to use esp-idf framework due to flash limitations
 ```
