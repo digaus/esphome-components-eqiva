@@ -173,7 +173,6 @@ class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
             this->parent_->set_user_id(user_id);
             this->parent_->set_user_key(user_key);
             this->parent_->set_address(string_to_mac(mac_address));
-            this->parent_->set_auto_connect(true);
             ESP_LOGD("ESP Eqiva", " Address: %s, %s", this->parent_->address_str().c_str(), mac_address.c_str());
 
         }
