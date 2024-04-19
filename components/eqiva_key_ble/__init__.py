@@ -55,6 +55,7 @@ async def to_code(config):
         cg.add(var.set_address(mac_address.as_hex))
     cg.add(var.set_user_id(config[CONF_USER_ID]))
     cg.add(var.set_user_key(config[CONF_USER_KEY]))
+    cg.add(var.set_auto_connect(True))
 
 
 @automation.register_action(
