@@ -4,6 +4,7 @@
 #include "eQ3_util.h"
 #include "eQ3_message.h"
 #include <sstream>
+#include "esp_random.h"
 
 #ifdef USE_ESP32
 
