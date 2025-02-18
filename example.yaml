@@ -174,20 +174,6 @@ text_sensor:
       name: "Low Battery"
     lock_ble_state:
       name: "Lock BLE State"
-      id: lock_ble_state
-      on_value:
-        then:
-          - if:
-              condition:
-                and:
-                  - wifi.connected
-                  - not:
-                      text_sensor.state:
-                        id: lock_ble_state
-                        state: 'ESTABLISHED'
-              then: 
-                - esp32_ble_tracker.start_scan:
-                    continuous: true
     user_id:
       name: "User ID"
     user_key:
