@@ -120,7 +120,7 @@ class EqivaKeyBle : public BLEClientBase {
         void set_mac_address_sensor(text_sensor::TextSensor *mac_address_sensor) { this->mac_address_sensor_ = mac_address_sensor; }
 
         void set_state(esphome::esp32_ble_tracker::ClientState st) {
-            this->state_ = st;
+            BLEClientBase::set_state(st);
             this->lock_ble_state_sensor_->publish_state(getClientState()); 
         };
         void dump_config() override;
