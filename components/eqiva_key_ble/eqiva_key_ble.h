@@ -60,10 +60,6 @@ class EqivaKeyBle : public BLEClientBase {
                 client_state = "IDLE";
                 break;
             }
-            case espbt::ClientState::SEARCHING: {
-                client_state = "SEARCHING";
-                break;
-            }
             case espbt::ClientState::DISCOVERED: {
                 client_state = "DISCOVERED";
                 break;
@@ -192,11 +188,14 @@ class EqivaDisconnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
 template<typename... Ts>
 class EqivaPair : public Action<Ts...>, public Parented<EqivaKeyBle> {
     TEMPLATABLE_VALUE(std::string, card_key)
+    TEMPLATABLE_VALUE(std::string, mac_address)
     public:
         void play(Ts... x) override { 
             auto card_key = this->card_key_.value(x...);
+            auto mac_address = this->mac_address_.value(x...);
             this->parent_->set_card_key(card_key);
             this->parent_->startPair();
+            this->parent_->set_address(string_to_mac(mac_address));
         }
 };
 

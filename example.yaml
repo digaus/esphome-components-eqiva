@@ -1,134 +1,219 @@
 esphome:
   name: esphome-eqiva-lock
-  friendly_name: ESPHome Eqiva Lock
+  friendly_name: esphome-eqiva-lock
 
 esp32:
-  board: esp32dev
+  variant: ESP32S3
+  board: seeed_xiao_esp32s3
+  flash_size: 8MB
   framework:
     type: esp-idf
-    # Uncomment below for ESP32-C3 if you have unexpected reboots when encrypting data
-    # sdkconfig_options:l
-      # CONFIG_BOOTLOADER_WDT_TIME_MS: "60000"
-  
+    sdkconfig_options:
+      CONFIG_BOOTLOADER_WDT_TIME_MS: "60000"
+
 # Enable logging
 logger:
-  
+  hardware_uart: USB_SERIAL_JTAG
+
 # Enable Home Assistant API
 api:
   encryption:
-    key: "yourkey"
-    
-ota:
-
+    key: "44535345342523452354235dfasgfgdfatre="
+        
 web_server:
-  include_internal: true
-  local: false
   port: 80
+  version: 3
+  local: true
+  sorting_groups:
+    - id: sorting_group_lock_mac
+      name: "Lock Mac Address"
+      sorting_weight: -10
+    - id: sorting_group_lock_pair
+      name: "Lock Pair"
+      sorting_weight: -9
+    - id: sorting_group_lock_connect
+      name: "Lock Connect"
+      sorting_weight: -8
+    - id: sorting_group_lock_state
+      name: "Lock State"
+      sorting_weight: -7
+    - id: sorting_group_lock_settings
+      name: "Lock Settings"
+      sorting_weight: -6
+
+ota:
+  - platform: esphome
+    password: "7ff7838674a21d7be6b41f404c399bd7"
+    
+safe_mode:
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-
+  # output_power: 8.5
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: "Esphome-Web-Eqiva-Lock"
+    ssid: "Esphome-Eqiva-Lock"
     password: "12345678"
   # Activate scan only after wifi connect, see https://github.com/esphome/issues/issues/2941#issuecomment-1842369092
-  on_connect:
+    on_connect:
     - esp32_ble_tracker.start_scan:
-       continuous: true
+        continuous: true
     - eqiva_key_ble.connect:
-       mac_address: !lambda 'return id(mac_address).state;' 
-       user_id: !lambda 'return id(user_id).state;'
-       user_key: !lambda 'return id(user_key).state;'
+        mac_address: !lambda 'return id(mac_address).state;' 
+        user_id: !lambda 'return id(user_id).state;'
+        user_key: !lambda 'return id(user_key).state;'
+
   on_disconnect:
     - esp32_ble_tracker.stop_scan:
 
-      
 
-#button, number and text input for pairing and setting mac/user_id/user-key via UI
+captive_portal:
+
+external_components:
+  - source: github://digaus/esphome_component_bthome
+
+esp32_ble_tracker:
+  id: ble_tracker
+  scan_parameters:
+    window: 300ms
+    continuous: false
+
+# used for discovering the lock and get the mac_address, check logger for it
+eqiva_ble:
+
+eqiva_key_ble:
+  id: key_ble
+
+time:
+  - platform: sntp
+    id: sntptime
+    # ...
+    on_time:
+      # Every 4 minutes
+      - seconds: 0
+        minutes: /4
+        then:
+          - eqiva_key_ble.status:
+
+
 button:
   - platform: template
     id: ble_settings
-    name: BLE Settings _Save_
-    icon: "mdi:content-save"
+    name: Connect
+    web_server:
+      sorting_weight: -1
+      sorting_group_id: sorting_group_lock_connect
+    icon: "mdi:access-point-check"
     on_press:
       - eqiva_key_ble.connect:
           mac_address: !lambda 'return id(mac_address).state;' 
           user_id: !lambda 'return id(user_id).state;'
           user_key: !lambda 'return id(user_key).state;'
-  
   - platform: template
     id: ble_disconnect
-    name: BLE Settings _Disconnect_
-    icon: "mdi:clear"
+    name: Disconnect
+    web_server:
+      sorting_weight: -1
+      sorting_group_id: sorting_group_lock_connect
+    icon: "mdi:access-point-off"
     on_press:
       - eqiva_key_ble.disconnect:
   - platform: template
     id: ble_pair
-    name: BLE Pair _Start_
-    icon: "mdi:check-underline"
+    name: Pair
+    web_server:
+      sorting_weight: -1
+      sorting_group_id: sorting_group_lock_pair
+    icon: "mdi:access-point-plus"
     on_press:
       - eqiva_key_ble.pair:
-          card_key: !lambda 'return id(card_key).state;' 
+          card_key: !lambda 'return id(card_key).state;'
+          mac_address: !lambda 'return id(mac_address).state;' 
+
 
   - platform: template
     id: lock_settings
-    name: Lock Settings _Apply_
+    web_server:
+      sorting_weight: -1
+      sorting_group_id: sorting_group_lock_settings
+    name: Save
     icon: "mdi:check-underline"
     on_press:
       - eqiva_key_ble.settings:
           turn_left: !lambda 'return id(direction).state == "Left";' 
           key_horizontal: !lambda 'return id(position).state == "Horizontal";'
           lock_turns: !lambda 'return atoi(id(turns).state.c_str());'
-          
+
+
+text:
+  - platform: template
+    icon: "mdi:info"
+    mode: text
+    name: User Key
+    web_server:
+      sorting_group_id: sorting_group_lock_connect
+    id: user_key
+    optimistic: true
+    restore_value: true
+  - platform: template
+    icon: "mdi:info"
+    mode: text
+    name: Mac Address
+    web_server:
+      sorting_group_id: sorting_group_lock_mac
+    id: mac_address
+    optimistic: true
+    restore_value: true
+  - platform: template
+    icon: "mdi:info"
+    mode: text
+    name: Pairing Card Key
+    web_server:
+      sorting_group_id: sorting_group_lock_pair
+    id: card_key
+    optimistic: true
+                  
 number:
   - platform: template
+    icon: "mdi:info"
     mode: box
-    name: BLE Settings User ID
+    name: User ID
+    web_server:
+      sorting_group_id: sorting_group_lock_connect
     id: user_id
     max_value: 7
     min_value: 0
     step: 1
     optimistic: true
     restore_value: true
-
-text:
-  - platform: template
-    mode: text
-    name: BLE Settings Mac Address
-    id: mac_address
-    optimistic: true
-    restore_value: true
-  - platform: template
-    mode: text
-    name: BLE Settings User Key
-    id: user_key
-    optimistic: true
-    restore_value: true
-  - platform: template
-    mode: text
-    name: BLE Pair Card Key
-    id: card_key
-    optimistic: true
-
+  
 select:
   - platform: template
-    name: Lock Settings Close Direction
+    icon: "mdi:info"
+    name: Close Direction
+    web_server:
+      sorting_group_id: sorting_group_lock_settings
     id: direction
     options:
      - "Left"
      - "Right"
     optimistic: true
   - platform: template
-    name: Lock Settings Key Position
+    icon: "mdi:info"
+    name: Key Position
+    web_server:
+      sorting_group_id: sorting_group_lock_settings
     id: position
     options:
      - "Vertical"
      - "Horizontal"
     optimistic: true
   - platform: template
-    name: Lock Settings Turns
+    icon: "mdi:info"
+    name: Turns
+    web_server:
+      sorting_group_id: sorting_group_lock_settings
     id: turns
     options:
      - "1"
@@ -138,76 +223,53 @@ select:
     optimistic: true
 
 
-
-
-captive_portal:
-    
-external_components:
-  source: github://digaus/esphome-components-eqiva
-  # use refresh when you do not get latest version
-  # refresh: 0s
-
-esp32_ble_tracker:
-   scan_parameters:
-    window: 300ms
-    # Activate scan only after wifi connect, see https://github.com/esphome/issues/issues/2941#issuecomment-1842369092
-    continuous: false
-
-eqiva_ble:
-
-eqiva_key_ble:
-  id: key_ble
-  # Below can left empty because we connect in wifi on_connect
-  # mac_address: 00:12:34:56:42:88
-  # user_id: 0
-  # user_key: 12345678636F6763386A726E33746F35
-
-
-text_sensor: 
+text_sensor:
   - platform: eqiva_key_ble
-    mac_address: 
+    mac_address:
+      icon: "mdi:info"
       name: "Mac Address"
-    lock_status: 
-      name: "Lock Status"
-      id: lock_status
+      web_server:
+        sorting_group_id: sorting_group_lock_state
+    lock_status:
+      icon: "mdi:info"
+      id: lock_state
+      name: "Lock State"
+      web_server:
+        sorting_group_id: sorting_group_lock_state
     low_battery:
       name: "Low Battery"
+      web_server:
+        sorting_group_id: sorting_group_lock_state
     lock_ble_state:
       name: "Lock BLE State"
+      icon: mdi:bluetooth-settings
+      web_server:
+        sorting_group_id: sorting_group_lock_state
     user_id:
-      name: "User ID"
+      icon: "mdi:info"
+      name: "Current User ID"
+      web_server:
+        sorting_group_id: sorting_group_lock_state
     user_key:
-      name: "User Key"
-    # on_raw_value:
-            # then:   Do stuff on state change (!lambda "return x") 
-
-
-# Call status every 4 minutes because lock seems to disconnect after 5 minutes of inactivity
-# need to watch battery consumption, could also do some other time or present based approaches
-time:
-  - platform: sntp
-    # ...
-    on_time:
-      # Every 4 minutes
-      - seconds: 0
-        minutes: /4
-        then:
-          - eqiva_key_ble.status:
-
-          
-# Lock component for HA, can also create two locks and use connect service to connect/control two different locks
-# One ESP per lock is still recommended
+      icon: "mdi:info"
+      name: "Current User Key"
+      web_server:
+        sorting_group_id: sorting_group_lock_state
+  
 lock:
   - platform: template
-    name: "Lock 1"
+    icon: "mdi:lock"
+    web_server:
+          sorting_group_id: sorting_group_lock_state
+    name: "Lock"
     lambda: |-
-      if (id(lock_status).state == "LOCKED") {
+      if (id(lock_state).state == "LOCKED") {
         return LOCK_STATE_LOCKED;
-      } else if (id(lock_status).state == "UNLOCKED" || id(lock_status).state == "OPENED") {
+      } else if (id(lock_state).state == "UNLOCKED" || id(lock_state).state == "OPENED") {
         return LOCK_STATE_UNLOCKED;
-      } else if(id(lock_status).state == "MOVING") {
+      } else if(id(lock_state).state == "MOVING") {
         return {};
-      } else if (id(lock_status).state == "UNKNOWN") {
+      } else if (id(lock_state).state == "UNKNOWN") {
         return LOCK_STATE_JAMMED;
       } 
       return LOCK_STATE_LOCKED;
@@ -215,6 +277,13 @@ lock:
       - eqiva_key_ble.lock:
     unlock_action:
       - eqiva_key_ble.unlock:
-    open_action:    
+    open_action:
       - eqiva_key_ble.open:
+ 
 
+sensor:
+  - platform: internal_temperature
+    name: "Internal Temperature"
+    icon: mdi:thermometer
+  - platform: uptime
+    name: Uptime Sensor

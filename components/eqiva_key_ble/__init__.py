@@ -27,7 +27,6 @@ EqivaLock = eqiva_key_ble_ns.class_("EqivaLock", automation.Action)
 EqivaUnlock = eqiva_key_ble_ns.class_("EqivaUnlock", automation.Action)
 EqivaOpen = eqiva_key_ble_ns.class_("EqivaOpen", automation.Action)
 EqivaStatus = eqiva_key_ble_ns.class_("EqivaStatus", automation.Action)
-#EqivaNonce = eqiva_key_ble_ns.class_("EqivaNonce", automation.Action)
 EqivaPair = eqiva_key_ble_ns.class_("EqivaPair", automation.Action)
 EqivaConnect = eqiva_key_ble_ns.class_("EqivaConnect", automation.Action)
 EqivaDisconnect = eqiva_key_ble_ns.class_("EqivaDisconnect", automation.Action)
@@ -125,15 +124,17 @@ async def eqiva_key_ble_disconnect_to_code(config, action_id, template_arg, args
         {
             cv.GenerateID(): cv.use_id(EqivaKeyBle),
             cv.Required(CONF_CARD_KEY): cv.templatable(cv.string),
+            cv.Required(CONF_MAC_ADDRESS): cv.templatable(cv.string),
         }
     ),
 )
 async def eqiva_key_ble_pair_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_ID])
-
     template_ = await cg.templatable(config[CONF_CARD_KEY], args, cg.std_string)
     cg.add(var.set_card_key(template_))
+    template_ = await cg.templatable(config[CONF_MAC_ADDRESS], args, cg.std_string)
+    cg.add(var.set_mac_address(template_))
     return var
 
 @automation.register_action(
@@ -192,17 +193,3 @@ async def eqiva_key_ble_status_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_ID])
     return var
-
-#@automation.register_action(
-#    "eqiva_key_ble.nonce",
-#    EqivaNonce,
-#    cv.Schema(
-#        {
-#            cv.GenerateID(): cv.use_id(EqivaKeyBle),
-#        }
-#    ),
-#)
-#async def eqiva_key_ble_nonce_to_code(config, action_id, template_arg, args):
-#    var = cg.new_Pvariable(action_id, template_arg)
-#    await cg.register_parented(var, config[CONF_ID])
-#    return var
