@@ -113,7 +113,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
           ESP_LOGD(TAG, string_to_hex(msgdata.substr(1, msgdata.length() - 7)).c_str());
           std::string computed_auth_value = compute_auth_value(decrypted, msgtype, clientState.local_session_nonce, clientState.remote_security_counter, clientState.user_key);
           if (msg_auth_value != computed_auth_value) {
-              ESP_LOGD(TAG,"# Auth value mismatch");
+              ESP_LOGE(TAG,"# Auth value mismatch");
               clientState.remote_session_nonce.clear();
               clientState.remote_security_counter = 0;
               return true;
@@ -164,7 +164,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
                 ESP_LOGD(TAG,"Remote user_id: %d",  clientState.user_id);
            
               } else {
-                ESP_LOGD(TAG,"error Nonce exchanged: %s",  string_to_hex(clientState.remote_session_nonce).c_str());
+                ESP_LOGE(TAG,"error Nonce exchanged: %s",  string_to_hex(clientState.remote_session_nonce).c_str());
               }
 
               int user_id = message.getUserId();
