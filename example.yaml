@@ -71,7 +71,7 @@ wifi:
 captive_portal:
 
 external_components:
-  - source: github://digaus/esphome_component_bthome
+  - source: github://digaus/esphome-components-eqiva
 
 esp32_ble_tracker:
   id: ble_tracker
