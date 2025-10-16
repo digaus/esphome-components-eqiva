@@ -64,10 +64,6 @@ class EqivaKeyBle : public BLEClientBase {
                 client_state = "DISCOVERED";
                 break;
             }
-            case espbt::ClientState::READY_TO_CONNECT: {
-                client_state = "READY_TO_CONNECT";
-                break;
-            }
             case espbt::ClientState::CONNECTING: {
                 client_state = "CONNECTING";
                 break;
