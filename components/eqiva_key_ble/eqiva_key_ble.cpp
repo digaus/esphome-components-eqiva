@@ -229,7 +229,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
               break;
           }
         }
-        sendFragment();
+        // sendFragment();
       }
       break;
     }
