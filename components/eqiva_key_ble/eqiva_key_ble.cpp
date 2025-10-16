@@ -11,21 +11,6 @@
 namespace esphome {
 namespace eqiva_key_ble {
 
-// Intermediate connection parameters for standard operation
-// ESP-IDF defaults (12.5-15ms) are too slow for stable connections through WiFi-based BLE proxies,
-// causing disconnections. These medium parameters balance responsiveness with bandwidth usage.
-static const uint16_t MEDIUM_MIN_CONN_INTERVAL = 0x07;  // 7 * 1.25ms = 8.75ms
-static const uint16_t MEDIUM_MAX_CONN_INTERVAL = 0x09;  // 9 * 1.25ms = 11.25ms
-// The timeout value was increased from 6s to 8s to address stability issues observed
-// in certain BLE devices when operating through WiFi-based BLE proxies. The longer
-// timeout reduces the likelihood of disconnections during periods of high latency.
-static const uint16_t MEDIUM_CONN_TIMEOUT = 800;  // 800 * 10ms = 8s
-
-// Fastest connection parameters for devices with short discovery timeouts
-static const uint16_t FAST_MIN_CONN_INTERVAL = 0x06;  // 6 * 1.25ms = 7.5ms (BLE minimum)
-static const uint16_t FAST_MAX_CONN_INTERVAL = 0x06;  // 6 * 1.25ms = 7.5ms
-static const uint16_t FAST_CONN_TIMEOUT = 1000;       // 1000 * 10ms = 10s
-
 
 static const char *const TAG = "eqiva_key_ble";
 
@@ -244,7 +229,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
               break;
           }
         }
-
+        sendFragment();
       }
       break;
     }
