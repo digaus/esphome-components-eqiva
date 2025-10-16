@@ -11,6 +11,22 @@
 namespace esphome {
 namespace eqiva_key_ble {
 
+// Intermediate connection parameters for standard operation
+// ESP-IDF defaults (12.5-15ms) are too slow for stable connections through WiFi-based BLE proxies,
+// causing disconnections. These medium parameters balance responsiveness with bandwidth usage.
+static const uint16_t MEDIUM_MIN_CONN_INTERVAL = 0x07;  // 7 * 1.25ms = 8.75ms
+static const uint16_t MEDIUM_MAX_CONN_INTERVAL = 0x09;  // 9 * 1.25ms = 11.25ms
+// The timeout value was increased from 6s to 8s to address stability issues observed
+// in certain BLE devices when operating through WiFi-based BLE proxies. The longer
+// timeout reduces the likelihood of disconnections during periods of high latency.
+static const uint16_t MEDIUM_CONN_TIMEOUT = 800;  // 800 * 10ms = 8s
+
+// Fastest connection parameters for devices with short discovery timeouts
+static const uint16_t FAST_MIN_CONN_INTERVAL = 0x06;  // 6 * 1.25ms = 7.5ms (BLE minimum)
+static const uint16_t FAST_MAX_CONN_INTERVAL = 0x06;  // 6 * 1.25ms = 7.5ms
+static const uint16_t FAST_CONN_TIMEOUT = 1000;       // 1000 * 10ms = 10s
+
+
 static const char *const TAG = "eqiva_key_ble";
 
 void EqivaKeyBle::dump_config() {
@@ -45,6 +61,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
           this->remote_bda_,
           read->handle
         );
+
         ESP_LOGD(TAG, "Read (UUID): %s  ",  read->uuid.to_string().c_str());
         init();
         if (currentMsg == NULL && requestPair == false && clientState.user_key.length() > 0 && clientState.user_id < 255) {
@@ -78,7 +95,11 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
     }
     case ESP_GATTC_NOTIFY_EVT: {
       ESP_LOGD(TAG, "ESP_GATTC_NOTIFY_EVT");
+      unsigned long currentMillis = getTime();
+      ESP_LOGI(TAG, "Notify successfull: %lu | %lu | %lu", sending, currentMillis,  currentMillis - sending);
+      sending = 0;
       if (param != NULL) {
+
         eQ3Message::MessageFragment frag;
 
         frag.data = std::string((char *) param->notify.value, param->notify.value_len);
@@ -162,7 +183,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
               if (clientState.remote_session_nonce.length() == 8) {
                 ESP_LOGD(TAG,"Nonce exchanged: %s",  string_to_hex(clientState.remote_session_nonce).c_str());
                 ESP_LOGD(TAG,"Remote user_id: %d",  clientState.user_id);
-           
+
               } else {
                 ESP_LOGE(TAG,"error Nonce exchanged: %s",  string_to_hex(clientState.remote_session_nonce).c_str());
               }
@@ -223,8 +244,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
               break;
           }
         }
-  
-        sendFragment();
+
       }
       break;
     }
@@ -323,6 +343,7 @@ void EqivaKeyBle::sendNonce() {
 
 bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
     if (((sendingNonce == false && clientState.remote_session_nonce.length() > 0) || nonce) && this->state() == espbt::ClientState::ESTABLISHED) {
+      ESP_LOGD(TAG, "Start send message");
       std::string data;
       if (msg->isSecure()) {
           std::string padded_data;
@@ -346,6 +367,8 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
       int chunks = data.length() / 15;
       if (data.length() % 15 > 0)
           chunks += 1;
+
+      ESP_LOGD(TAG, "Start create fragments");
       for (int i = 0; i < chunks; i++) {
           eQ3Message::MessageFragment frag;
           frag.data.append(1, (i ? 0 : 0x80) + (chunks - 1 - i)); // fragment status byte
@@ -390,14 +413,16 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
 }
 
 void EqivaKeyBle::sendFragment() {
+    unsigned long currentMillis = getTime();
     ESP_LOGD(TAG, "Check send frag: %s, %s", sendQueue.empty()  ? "empty" : "not-empty", sending > 0 ? "sending" : "not-sending");
-
-    if (sendQueue.empty() || sending > 0 || this->state_ != espbt::ClientState::ESTABLISHED)
+    if (sendQueue.empty() || sending > 0 && currentMillis - sending <= 3 || this->state_ != espbt::ClientState::ESTABLISHED) {
       return;
-    sending = getTime();
-   // ESP_LOGE(TAG, "Sending: %d", sending);
+    }
+      
+    sending = currentMillis;
     std::string data = sendQueue.front().data;
     sendQueue.pop();
+    ESP_LOGI(TAG, "Sending: %d", (uint8_t *) (data.c_str()));
     write->write_value((uint8_t *) (data.c_str()), 16, ESP_GATT_WRITE_TYPE_RSP);
 }
 
