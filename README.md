@@ -1,8 +1,6 @@
 Big thanks to previous work done by:  [@MariusSchiffer](https://github.com/MariusSchiffer/esp32-keyble), [@tc-maxx](https://github.com/tc-maxx/esp32-keyble), [@lumokitho](https://github.com/lumokitho/esp32-keyble) and the original creator [@oyooyo](https://github.com/oyooyo/keyble)
 
 
-# Disclaimer: There seems to be an issue with ESP32 with an Xtensa CPU where the write call sometimes goes not through and the lock disconnects because of no communication. It is recommended for now to use ESP32 with RISCV (C3) and not Xtensa (S3)
-
 # Example yaml:
 
 ```
@@ -98,9 +96,9 @@ time:
     id: sntptime
     # ...
     on_time:
-      # Every 4 minutes
+      # Every 3 minutes
       - seconds: 0
-        minutes: /4
+        minutes: /3
         then:
           - eqiva_key_ble.status:
 
