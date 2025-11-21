@@ -136,7 +136,7 @@ class EqivaSettings : public Action<Ts...>, public Parented<EqivaKeyBle> {
     TEMPLATABLE_VALUE(bool, key_horizontal)
     TEMPLATABLE_VALUE(int, lock_turns)
     public:
-        void play(Ts... x) override { 
+        void play(const Ts &...x) override { 
             auto turn_left = this->turn_left_.value(x...);
             auto key_horizontal = this->key_horizontal_.value(x...);
             auto lock_turns = this->lock_turns_.value(x...);
@@ -153,7 +153,7 @@ class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
     TEMPLATABLE_VALUE(int, user_id)
     TEMPLATABLE_VALUE(std::string, user_key)
     public:
-        void play(Ts... x) override {
+        void play(const Ts &...x) override {
 
             auto mac_address = this->mac_address_.value(x...);
             auto current_mac_address = this->parent_->get_address();
@@ -173,7 +173,7 @@ class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
 template<typename... Ts>
 class EqivaDisconnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
     public:
-        void play(Ts... x) override {
+        void play(const Ts &...x) {
             // this->parent_->set_user_id(255);
             // this->parent_->set_user_key("");
             this->parent_->disconnect();
@@ -186,7 +186,7 @@ class EqivaPair : public Action<Ts...>, public Parented<EqivaKeyBle> {
     TEMPLATABLE_VALUE(std::string, card_key)
     TEMPLATABLE_VALUE(std::string, mac_address)
     public:
-        void play(Ts... x) override { 
+        void play(const Ts &...x) { 
             auto card_key = this->card_key_.value(x...);
             auto mac_address = this->mac_address_.value(x...);
             this->parent_->set_card_key(card_key);
@@ -198,25 +198,25 @@ class EqivaPair : public Action<Ts...>, public Parented<EqivaKeyBle> {
 template<typename... Ts>
 class EqivaLock : public Action<Ts...>, public Parented<EqivaKeyBle> {
  public:
-  void play(Ts... x) override { this->parent_->sendCommand(LOCK); }
+  void play(const Ts &...x) { this->parent_->sendCommand(LOCK); }
 };
 
 template<typename... Ts>
 class EqivaUnlock : public Action<Ts...>, public Parented<EqivaKeyBle> {
  public:
-  void play(Ts... x) override { this->parent_->sendCommand(UNLOCK); }
+  void play(const Ts &...x) { this->parent_->sendCommand(UNLOCK); }
 };
 
 template<typename... Ts>
 class EqivaOpen : public Action<Ts...>, public Parented<EqivaKeyBle> {
  public:
-  void play(Ts... x) override { this->parent_->sendCommand(OPEN); }
+  void play(const Ts &...x) { this->parent_->sendCommand(OPEN); }
 };
 
 template<typename... Ts>
 class EqivaStatus : public Action<Ts...>, public Parented<EqivaKeyBle> {
  public:
-  void play(Ts... x) override { this->parent_->sendCommand(REQUEST_STATUS); }
+  void play(const Ts &...x) { this->parent_->sendCommand(REQUEST_STATUS); }
 };
 
 
