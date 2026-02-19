@@ -39,7 +39,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         clientState.remote_session_nonce.clear();
         clientState.local_session_nonce.clear();
         write = this->get_characteristic(esp32_ble_tracker::ESPBTUUID::from_raw("58e06900-15d8-11e6-b737-0002a5d5c51b"), esp32_ble_tracker::ESPBTUUID::from_raw("3141dd40-15db-11e6-a24b-0002a5d5c51b"));
-        ESP_LOGD(TAG, "Write (UUID): %s  ",  write->uuid.to_string().c_str());
         read = this->get_characteristic(esp32_ble_tracker::ESPBTUUID::from_raw("58e06900-15d8-11e6-b737-0002a5d5c51b"), esp32_ble_tracker::ESPBTUUID::from_raw("359d4820-15db-11e6-82bd-0002a5d5c51b"));
         esp_err_t errRc = ::esp_ble_gattc_register_for_notify(
           this->gattc_if_,
@@ -47,7 +46,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
           read->handle
         );
 
-        ESP_LOGD(TAG, "Read (UUID): %s  ",  read->uuid.to_string().c_str());
         init();
         if (currentMsg == NULL && requestPair == false && clientState.user_key.length() > 0 && clientState.user_id < 255) {
           auto * msg = new eQ3Message::StatusRequestMessage;
@@ -80,8 +78,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
     }
     case ESP_GATTC_NOTIFY_EVT: {
       ESP_LOGD(TAG, "ESP_GATTC_NOTIFY_EVT");
-      unsigned long currentMillis = getTime();
-      ESP_LOGI(TAG, "Notify successfull: %lu | %lu | %lu", sending, currentMillis,  currentMillis - sending);
       sending = 0;
       if (param != NULL) {
 
@@ -229,7 +225,7 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
               break;
           }
         }
-        // sendFragment();
+        sendFragment();
       }
       break;
     }
@@ -400,7 +396,7 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
 void EqivaKeyBle::sendFragment() {
     unsigned long currentMillis = getTime();
     ESP_LOGD(TAG, "Check send frag: %s, %s", sendQueue.empty()  ? "empty" : "not-empty", sending > 0 ? "sending" : "not-sending");
-    if (sendQueue.empty() || sending > 0 && currentMillis - sending <= 3 || this->state_ != espbt::ClientState::ESTABLISHED) {
+    if (sendQueue.empty() || sending > 0 && currentMillis - sending <= 3 || this->state() != espbt::ClientState::ESTABLISHED) {
       return;
     }
       
