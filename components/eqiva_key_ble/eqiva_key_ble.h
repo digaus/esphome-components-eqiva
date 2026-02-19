@@ -47,7 +47,7 @@ class EqivaKeyBle : public BLEClientBase {
     }
     std::string getClientState() {
         std::string client_state;
-        switch(this->state_) {
+        switch(this->state()) {
             case espbt::ClientState::INIT: {
                 client_state = "INIT";
                 break;
