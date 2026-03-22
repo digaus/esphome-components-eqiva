@@ -17,7 +17,15 @@ CONFIG_SCHEMA = cv.Schema(
     }
 ).extend(esp32_ble_tracker.ESP_BLE_DEVICE_SCHEMA)
 
-
-def to_code(config):
+async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
-    yield esp32_ble_tracker.register_ble_device(var, config)
+    await esp32_ble_tracker.register_ble_device(var, config)
+```
+
+Save this as `/config/esphome/components/eqiva_ble/__init__.py` alongside the other patched file. Your local components folder should now look like:
+```
+/config/esphome/components/
+  eqiva_ble/
+    __init__.py        ← patched (yield → async/await)
+  eqiva_key_ble/
+    __init__.py        ← patched (synchronous=False)
