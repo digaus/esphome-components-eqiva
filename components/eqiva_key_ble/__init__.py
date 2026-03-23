@@ -201,8 +201,3 @@ async def eqiva_key_ble_status_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_ID])
     return var
-```
-
-**To deploy this without forking the repo**, use ESPHome's `local` source override. Save the patched file to your HA config folder at:
-```
-/config/esphome/components/eqiva_key_ble/__init__.py
