@@ -39,11 +39,7 @@ class EqivaKeyBle : public BLEClientBase {
     bool requestPair;
 
     unsigned long getTime() {
-        time_t now;
-        struct tm timeinfo;
-        localtime_r(&now, &timeinfo);
-        time(&now);
-        return now;
+        return millis() / 1000;
     }
     std::string getClientState() {
         std::string client_state;
