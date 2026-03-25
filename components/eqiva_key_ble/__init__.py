@@ -68,6 +68,7 @@ async def to_code(config):
             cv.Required(CONF_LOCK_TURNS): cv.templatable(cv.int_range(min=1, max=4)),
         }
     ),
+    synchronous=False,
 )
 async def eqiva_key_ble_settings_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
@@ -91,6 +92,7 @@ async def eqiva_key_ble_settings_to_code(config, action_id, template_arg, args):
             cv.Required(CONF_USER_KEY): cv.templatable(cv.string),
         }
     ),
+    synchronous=False,
 )
 async def eqiva_key_ble_connect_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
@@ -111,6 +113,7 @@ async def eqiva_key_ble_connect_to_code(config, action_id, template_arg, args):
             cv.GenerateID(): cv.use_id(EqivaKeyBle),
         }
     ),
+    synchronous=False,
 )
 async def eqiva_key_ble_disconnect_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
@@ -127,6 +130,7 @@ async def eqiva_key_ble_disconnect_to_code(config, action_id, template_arg, args
             cv.Required(CONF_MAC_ADDRESS): cv.templatable(cv.string),
         }
     ),
+    synchronous=False,
 )
 async def eqiva_key_ble_pair_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
@@ -145,6 +149,7 @@ async def eqiva_key_ble_pair_to_code(config, action_id, template_arg, args):
             cv.GenerateID(): cv.use_id(EqivaKeyBle),
         }
     ),
+    synchronous=False,
 )
 async def eqiva_key_ble_lock_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
@@ -160,6 +165,7 @@ async def eqiva_key_ble_lock_to_code(config, action_id, template_arg, args):
             cv.GenerateID(): cv.use_id(EqivaKeyBle),
         }
     ),
+    synchronous=False,
 )
 async def eqiva_key_ble_unlock_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
@@ -174,6 +180,7 @@ async def eqiva_key_ble_unlock_to_code(config, action_id, template_arg, args):
             cv.GenerateID(): cv.use_id(EqivaKeyBle),
         }
     ),
+    synchronous=False,
 )
 async def eqiva_key_ble_open_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
@@ -188,6 +195,7 @@ async def eqiva_key_ble_open_to_code(config, action_id, template_arg, args):
             cv.GenerateID(): cv.use_id(EqivaKeyBle),
         }
     ),
+    synchronous=False,
 )
 async def eqiva_key_ble_status_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
