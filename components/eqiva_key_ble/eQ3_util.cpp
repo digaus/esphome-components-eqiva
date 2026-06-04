@@ -4,9 +4,7 @@
 #include <string>
 #include <string.h>
 #include <sstream>
-#include <byteswap.h>
 #include <cmath>
-// #include <Arduino.h>
 #include <esp_log.h>
 
 using std::string;
