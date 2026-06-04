@@ -32,7 +32,7 @@ EqivaConnect = eqiva_key_ble_ns.class_("EqivaConnect", automation.Action)
 EqivaDisconnect = eqiva_key_ble_ns.class_("EqivaDisconnect", automation.Action)
 EqivaSettings = eqiva_key_ble_ns.class_("EqivaSettings", automation.Action)
 
-CONFIG_SCHEMA = (
+CONFIG_SCHEMA = cv.ensure_list(
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(EqivaKeyBle),
@@ -46,15 +46,16 @@ CONFIG_SCHEMA = (
 )
 
 
-async def to_code(config):
-    var = cg.new_Pvariable(config[CONF_ID])
-    await cg.register_component(var, config)
-    await esp32_ble_tracker.register_client(var, config)
-    if mac_address := config.get(CONF_MAC_ADDRESS):
-        cg.add(var.set_address(mac_address.as_hex))
-    cg.add(var.set_user_id(config[CONF_USER_ID]))
-    cg.add(var.set_user_key(config[CONF_USER_KEY]))
-    cg.add(var.set_auto_connect(True))
+async def to_code(configs):
+    for config in configs:
+        var = cg.new_Pvariable(config[CONF_ID])
+        await cg.register_component(var, config)
+        await esp32_ble_tracker.register_client(var, config)
+        if mac_address := config.get(CONF_MAC_ADDRESS):
+            cg.add(var.set_address(mac_address.as_hex))
+        cg.add(var.set_user_id(config[CONF_USER_ID]))
+        cg.add(var.set_user_key(config[CONF_USER_KEY]))
+        cg.add(var.set_auto_connect(True))
 
 
 @automation.register_action(
