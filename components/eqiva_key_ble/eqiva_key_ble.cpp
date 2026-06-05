@@ -817,37 +817,13 @@ bool EqivaKeyBle::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
 void EqivaKeyBle::connect() {
   this->handshake_completed_ = false;
   this->last_activity_time_ = millis();
-  
-  if (this->state() == espbt::ClientState::DISCOVERED) {
-    ESP_LOGI(TAG, "Initiating physical connection to discovered device...");
-    BLEClientBase::connect();
-  } else if (this->state() == espbt::ClientState::IDLE) {
-    ESP_LOGI(TAG, "Enabling discovery for connection...");
-    this->set_auto_connect(true);
-    if (esp32_ble_tracker::global_esp32_ble_tracker != nullptr &&
-        esp32_ble_tracker::global_esp32_ble_tracker->get_scanner_state() == esp32_ble_tracker::ScannerState::IDLE) {
-      esp32_ble_tracker::global_esp32_ble_tracker->start_scan();
-    }
-  }
+  BLEClientBase::connect();
 }
 
 void EqivaKeyBle::disconnect() {
-  this->set_auto_connect(false);
-  if (this->state() == espbt::ClientState::CONNECTING) {
-    ESP_LOGI(TAG, "Forcing connection state to IDLE to abort pending attempt...");
-    this->set_state(espbt::ClientState::IDLE);
-    if (this->pending_connect_) {
-      std::string pending_mac = this->pending_mac_address_;
-      this->pending_connect_ = false;
-      ESP_LOGI(TAG, "Executing deferred connection to MAC: %s", pending_mac.c_str());
-      this->set_address(string_to_mac(pending_mac));
-      this->handshake_completed_ = false;
-      this->connect();
-    }
-  } else {
-    BLEClientBase::disconnect();
-  }
+  BLEClientBase::disconnect();
 }
+
 
 void EqivaKeyBle::clear_bonds_and_cache(const std::string &mac_str) {
   uint64_t mac = string_to_mac(mac_str);
