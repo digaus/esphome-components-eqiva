@@ -18,7 +18,7 @@ logger:
 # Enable Home Assistant API
 api:
   encryption:
-    key: "44535345342523452354235dfasgfgdfatre="
+    key: "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="
         
 web_server:
   port: 80
@@ -56,7 +56,7 @@ wifi:
     ssid: "Esphome-Eqiva-Lock"
     password: "12345678"
   # Activate scan only after wifi connect, see https://github.com/esphome/issues/issues/2941#issuecomment-1842369092
-    on_connect:
+  on_connect:
     - esp32_ble_tracker.start_scan:
         continuous: true
     - eqiva_key_ble.connect:
@@ -71,7 +71,9 @@ wifi:
 captive_portal:
 
 external_components:
-  - source: github://digaus/esphome-components-eqiva
+  - source:
+      type: local
+      path: components
 
 esp32_ble_tracker:
   id: ble_tracker
@@ -84,17 +86,11 @@ eqiva_ble:
 
 eqiva_key_ble:
   id: key_ble
-
-time:
-  - platform: sntp
-    id: sntptime
-    # ...
-    on_time:
-      # Every 4 minutes
-      - seconds: 0
-        minutes: /4
-        then:
-          - eqiva_key_ble.status:
+  # If disconnect_timeout is set (e.g. 10s), the ESP32 disconnects from the lock after that period of inactivity
+  # to save lock battery. If not set (default 0s), the connection stays active.
+  disconnect_timeout: 10s
+  # When disconnect_timeout is set, define how often to reconnect to query status (default 2h)
+  status_update_interval: 2h
 
 
 button:
