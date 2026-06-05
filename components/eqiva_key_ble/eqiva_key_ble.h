@@ -37,6 +37,14 @@ class EqivaKeyBle : public BLEClientBase {
     unsigned long sending;
     eQ3Message::Message *currentMsg;
     bool requestPair;
+    uint16_t cached_write_handle_{0};
+    uint16_t cached_read_handle_{0};
+    bool manually_allocated_chars_{false};
+    uint32_t last_activity_time_{0};
+    bool handshake_completed_{false};
+    uint32_t disconnect_timeout_{0};
+    uint32_t status_update_interval_{7200000};
+    uint32_t last_status_update_time_{0};
 
     unsigned long getTime() {
         return millis() / 1000;
@@ -77,6 +85,15 @@ class EqivaKeyBle : public BLEClientBase {
     }
     public:
         ClientState clientState;
+        void setup() override;
+#ifdef USE_ESP32_BLE_DEVICE
+        bool parse_device(const esp32_ble_tracker::ESPBTDevice &device) override;
+#endif
+        void set_disconnect_timeout(uint32_t ms) { this->disconnect_timeout_ = ms; }
+        void set_status_update_interval(uint32_t ms) { this->status_update_interval_ = ms; }
+        void connect();
+        void disconnect();
+        void loop() override;
         void startPair();
         void applySettings();
         void sendCommand(CommandType command);
@@ -114,6 +131,13 @@ class EqivaKeyBle : public BLEClientBase {
         void dump_config() override;
         bool gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                                 esp_ble_gattc_cb_param_t *param) override;
+        void runTest();
+        bool testing_{false};
+        unsigned long test_start_time_{0};
+        unsigned long test_connect_time_{0};
+        unsigned long test_handshake_time_{0};
+        unsigned long test_motor_start_time_{0};
+        std::string test_target_state_{""};
 
     protected: 
         text_sensor::TextSensor *lock_ble_state_sensor_{nullptr};                
@@ -161,8 +185,8 @@ class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
             this->parent_->set_user_id(user_id);
             this->parent_->set_user_key(user_key);
             this->parent_->set_address(string_to_mac(mac_address));
+            this->parent_->connect();
             ESP_LOGD("ESP Eqiva", " Address: %s, %s", this->parent_->address_str(), mac_address.c_str());
-
         }
 };
 
@@ -213,6 +237,12 @@ template<typename... Ts>
 class EqivaStatus : public Action<Ts...>, public Parented<EqivaKeyBle> {
  public:
   void play(const Ts &...x) { this->parent_->sendCommand(REQUEST_STATUS); }
+};
+
+template<typename... Ts>
+class EqivaRunTest : public Action<Ts...>, public Parented<EqivaKeyBle> {
+ public:
+  void play(const Ts &...x) { this->parent_->runTest(); }
 };
 
 
