@@ -145,13 +145,8 @@ class EqivaKeyBle : public BLEClientBase {
         void dump_config() override;
         bool gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                                 esp_ble_gattc_cb_param_t *param) override;
-        void runTest();
-        bool testing_{false};
-        unsigned long test_start_time_{0};
-        unsigned long test_connect_time_{0};
-        unsigned long test_handshake_time_{0};
-        unsigned long test_motor_start_time_{0};
-        std::string test_target_state_{""};
+        bool gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
+                                esp_ble_gattc_cb_param_t *param) override;
 
     protected: 
         uint64_t configured_mac_address_{0};
@@ -266,11 +261,6 @@ class EqivaStatus : public Action<Ts...>, public Parented<EqivaKeyBle> {
   void play(const Ts &...x) { this->parent_->sendCommand(REQUEST_STATUS); }
 };
 
-template<typename... Ts>
-class EqivaRunTest : public Action<Ts...>, public Parented<EqivaKeyBle> {
- public:
-  void play(const Ts &...x) { this->parent_->runTest(); }
-};
 
 
 

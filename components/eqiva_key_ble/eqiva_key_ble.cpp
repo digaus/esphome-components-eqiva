@@ -54,11 +54,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         this->conn_id_ = param->open.conn_id;
         this->set_state(espbt::ClientState::CONNECTED);
 
-        if (this->testing_) {
-          this->test_connect_time_ = millis() - this->test_start_time_;
-          ESP_LOGI(TAG, "ESP Eqiva Test: BLE physically connected (GATT Cached). Time: %lu ms", this->test_connect_time_);
-        }
-
         if (this->manually_allocated_chars_) {
           if (write != nullptr) {
             if (write->service != nullptr) delete write->service;
@@ -220,11 +215,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         this->conn_id_ = param->open.conn_id;
         this->set_state(espbt::ClientState::CONNECTED);
 
-        if (this->testing_) {
-          this->test_connect_time_ = millis() - this->test_start_time_;
-          ESP_LOGI(TAG, "ESP Eqiva Test: BLE physically connected (GATT Cached). Time: %lu ms", this->test_connect_time_);
-        }
-
         if (write != nullptr) {
           if (write->service != nullptr) delete write->service;
           delete write;
@@ -308,10 +298,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
 
   switch (event) {
     case ESP_GATTC_OPEN_EVT: {
-      if (this->testing_) {
-        this->test_connect_time_ = millis() - this->test_start_time_;
-        ESP_LOGI(TAG, "ESP Eqiva Test: BLE physically connected. Time: %lu ms", this->test_connect_time_);
-      }
       break;
     }
     case ESP_GATTC_SEARCH_CMPL_EVT: {
@@ -494,10 +480,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
               this->last_activity_time_ = millis();
 
               sendingNonce = false;
-              if (this->testing_) {
-                this->test_handshake_time_ = millis() - this->test_start_time_;
-                ESP_LOGI(TAG, "ESP Eqiva Test: Handshake nonce exchanged. Time: %lu ms", this->test_handshake_time_);
-              }
               if (currentMsg != NULL) {
                 sendMessage(currentMsg, false);
                 currentMsg = NULL;
@@ -542,48 +524,6 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
 
               ESP_LOGD(TAG, "# Lock state: %d", message.getLockStatus());
               ESP_LOGD(TAG, "# Battery low: %s", message.isBatteryLow() ? "true" : "false");
-
-              if (this->testing_) {
-                int status_val = message.getLockStatus();
-                if (this->test_target_state_ == "") {
-                  // Initial status check
-                  if (status_val == 3) { // LOCKED
-                    ESP_LOGI(TAG, "ESP Eqiva Test: Initial status: LOCKED. Sending UNLOCK command...");
-                    this->test_target_state_ = "UNLOCKED";
-                    this->sendCommand(UNLOCK);
-                  } else if (status_val == 2) { // UNLOCKED
-                    ESP_LOGI(TAG, "ESP Eqiva Test: Initial status: UNLOCKED. Sending LOCK command...");
-                    this->test_target_state_ = "LOCKED";
-                    this->sendCommand(LOCK);
-                  } else {
-                    ESP_LOGE(TAG, "ESP Eqiva Test: Initial status is UNKNOWN/MOVING/OPENED (%d). Aborting test.", status_val);
-                    this->testing_ = false;
-                    this->disconnect();
-                  }
-                } else if (status_val == 1) { // MOVING
-                  if (this->test_motor_start_time_ == 0) {
-                    this->test_motor_start_time_ = millis() - this->test_start_time_;
-                    ESP_LOGI(TAG, "ESP Eqiva Test: Motor started turning! Time: %lu ms", this->test_motor_start_time_);
-                  }
-                } else {
-                  std::string state_str = "";
-                  if (status_val == 3) state_str = "LOCKED";
-                  else if (status_val == 2) state_str = "UNLOCKED";
-                  
-                  if (state_str == this->test_target_state_) {
-                    unsigned long total_time = millis() - this->test_start_time_;
-                    ESP_LOGI(TAG, "ESP Eqiva Test: Target state %s reached!", state_str.c_str());
-                    ESP_LOGI(TAG, "=== LATENCY TEST SUMMARY ===");
-                    ESP_LOGI(TAG, "Connect:     %lu ms", this->test_connect_time_);
-                    ESP_LOGI(TAG, "Handshake:   %lu ms (ab connect: %lu ms)", this->test_handshake_time_, this->test_handshake_time_ - this->test_connect_time_);
-                    ESP_LOGI(TAG, "Motor start: %lu ms", this->test_motor_start_time_);
-                    ESP_LOGI(TAG, "Total cycle: %lu ms", total_time);
-                    ESP_LOGI(TAG, "============================");
-                    this->testing_ = false;
-                    this->disconnect();
-                  }
-                }
-              }
               break;
           }
 
@@ -779,25 +719,7 @@ void EqivaKeyBle::sendFragment() {
     write->write_value((uint8_t *) (data.c_str()), 16, ESP_GATT_WRITE_TYPE_RSP);
 }
 
-void EqivaKeyBle::runTest() {
-    ESP_LOGI(TAG, "ESP Eqiva Test: Starting automated latency test run...");
-    if (this->address_ == 0 || this->address_ == 1) {
-        ESP_LOGE(TAG, "ESP Eqiva Test: Error - No valid MAC address configured.");
-        return;
-    }
-    this->testing_ = true;
-    this->test_start_time_ = millis();
-    this->test_connect_time_ = 0;
-    this->test_handshake_time_ = 0;
-    this->test_motor_start_time_ = 0;
-    this->test_target_state_ = "";
 
-    if (this->state() != espbt::ClientState::IDLE) {
-        ESP_LOGD(TAG, "ESP Eqiva Test: Reconnecting to restart test...");
-        this->disconnect();
-    }
-    this->connect();
-}
 
 void EqivaKeyBle::setup() {
   BLEClientBase::setup();
