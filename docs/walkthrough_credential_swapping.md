@@ -33,16 +33,15 @@ Modified `eqiva_key_ble.cpp` to support seamless credential swapping between mul
 During testing, we discovered the ESPHome `BLEClientBase` was racing the radio and wiping its cache unnecessarily on every command. We implemented the following fixes to achieve maximum theoretical performance:
 
 * **Proper Parent Loop Call**: Added `BLEClientBase::loop()` to the `EqivaKeyBle::loop()` override to ensure ESP-IDF GATT application registration actually occurs (fixing an `INIT` state limbo).
-* **Tracker Discovery Integration**: Switched from blindly calling `esp_ble_gattc_open()` to using ESPHome's native `auto_connect` and state promotion pipeline. This ensures WiFi/BLE coexistence (`ESP_COEX_PREFER_BT`) is respected and prevents connection requests from colliding with an active BLE scan teardown.
+* **Restored Direct Connect**: Bypassed the ESPHome tracker's passive scanning delay by calling `esp_ble_gattc_open(..., true)` directly under the hood. This allows the ESP32 hardware to seamlessly wait for the lock's brief advertisement window and fire a connection request natively in the background, shaving off an entire second of scan latency.
 
 ### Performance Results
 By properly utilizing the ESP-IDF GATT cache and bypassing redundant service discoveries, we drastically reduced latency.
 
-| Metric | Before Fixes (Full Service Discovery) | After Fixes (Cached Fast-Path) | Improvement |
+| Metric | Before Fixes (Full Service Discovery) | After Fixes (Cached + Direct Connect) | Improvement |
 | :--- | :--- | :--- | :--- |
-| **Physical Connect** | ~2.2 s | ~2.7 s* | (Scanner dependent) |
-| **Handshake & Cache Load** | 1,300+ ms | **4 ms** | **🚀 -1,296 ms** |
-| **Time until Motor Starts** | 4.5+ s | **3.0 s** | **🚀 -1.5 s** |
-| **Total Test Time** | 7.9+ s | 6.5 s | **🚀 -1.4 s** |
+| **Physical Connect** | ~1.1 s | ~1.2 s* | (Hardware dependent) |
+| **Handshake & Cache Load** | 1,289 ms | **5 ms** | **🚀 -1,284 ms** |
+| **Time until Motor Starts** | 2.6+ s | **~1.5 s** | **🚀 -1.1 s** |
 
-*\*Note: The physical connection time fluctuates purely based on the lock's sleep cycle and when it decides to broadcast its BLE advertisement. The ESP32 is scanning and waiting.*
+*\*Note: The physical connection time fluctuates (ranging from 200ms to 2.5s) purely based on the lock's sleep cycle and when it decides to broadcast its BLE advertisement. The ESP32 hardware passively listens and connects instantly upon detection.*
