@@ -9,6 +9,8 @@
 #include "esphome/components/esp32_ble_client/ble_service.h"
 
 #ifdef USE_ESP32
+#include <esp_gap_ble_api.h>
+#include <esp_gattc_api.h>
 
 namespace esphome {
 namespace eqiva_key_ble {
@@ -364,6 +366,14 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         }
         this->manually_allocated_chars_ = false;
         ESP_LOGD(TAG, "Manually allocated characteristics cleaned up on disconnect/close.");
+      }
+      if (this->pending_connect_ && this->state() == espbt::ClientState::IDLE) {
+        std::string pending_mac = this->pending_mac_address_;
+        this->pending_connect_ = false;
+        ESP_LOGI(TAG, "Executing deferred connection to MAC: %s", pending_mac.c_str());
+        this->set_address(string_to_mac(pending_mac));
+        this->handshake_completed_ = false;
+        this->connect();
       }
       break;
     }
@@ -807,14 +817,91 @@ bool EqivaKeyBle::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
 void EqivaKeyBle::connect() {
   this->handshake_completed_ = false;
   this->last_activity_time_ = millis();
-  BLEClientBase::connect();
+  
+  if (this->state() == espbt::ClientState::DISCOVERED) {
+    ESP_LOGI(TAG, "Initiating physical connection to discovered device...");
+    BLEClientBase::connect();
+  } else if (this->state() == espbt::ClientState::IDLE) {
+    ESP_LOGI(TAG, "Enabling discovery for connection...");
+    this->set_auto_connect(true);
+    if (esp32_ble_tracker::global_esp32_ble_tracker != nullptr &&
+        esp32_ble_tracker::global_esp32_ble_tracker->get_scanner_state() == esp32_ble_tracker::ScannerState::IDLE) {
+      esp32_ble_tracker::global_esp32_ble_tracker->start_scan();
+    }
+  }
 }
 
 void EqivaKeyBle::disconnect() {
-  BLEClientBase::disconnect();
+  this->set_auto_connect(false);
+  if (this->state() == espbt::ClientState::CONNECTING) {
+    ESP_LOGI(TAG, "Forcing connection state to IDLE to abort pending attempt...");
+    this->set_state(espbt::ClientState::IDLE);
+    if (this->pending_connect_) {
+      std::string pending_mac = this->pending_mac_address_;
+      this->pending_connect_ = false;
+      ESP_LOGI(TAG, "Executing deferred connection to MAC: %s", pending_mac.c_str());
+      this->set_address(string_to_mac(pending_mac));
+      this->handshake_completed_ = false;
+      this->connect();
+    }
+  } else {
+    BLEClientBase::disconnect();
+  }
+}
+
+void EqivaKeyBle::clear_bonds_and_cache(const std::string &mac_str) {
+  uint64_t mac = string_to_mac(mac_str);
+  if (mac == 0) return;
+  
+  // Reset in-memory cached GATT handles — they belong to the previous lock
+  // and would cause the OPEN_EVT handler to skip service discovery
+  this->cached_write_handle_ = 0;
+  this->cached_read_handle_ = 0;
+  ESP_LOGI(TAG, "Invalidated cached GATT handles for MAC swap");
+
+  
+  esp_bd_addr_t bda;
+  bda[0] = (uint8_t) (mac >> 40);
+  bda[1] = (uint8_t) (mac >> 32);
+  bda[2] = (uint8_t) (mac >> 24);
+  bda[3] = (uint8_t) (mac >> 16);
+  bda[4] = (uint8_t) (mac >> 8);
+  bda[5] = (uint8_t) (mac);
+
+  esp_err_t err = esp_ble_gattc_cache_clean(bda);
+  if (err != ESP_OK) {
+    ESP_LOGW(TAG, "esp_ble_gattc_cache_clean failed for %s, err=%d", mac_str.c_str(), err);
+  } else {
+    ESP_LOGI(TAG, "Cleaned GATTC cache for MAC: %s", mac_str.c_str());
+  }
+
+  err = esp_ble_remove_bond_device(bda);
+  if (err != ESP_OK) {
+    ESP_LOGW(TAG, "esp_ble_remove_bond_device failed for %s, err=%d", mac_str.c_str(), err);
+  } else {
+    ESP_LOGI(TAG, "Removed BLE bonding keys for MAC: %s", mac_str.c_str());
+  }
+
+  uint64_t current_mac = this->address_;
+  if (current_mac != 0 && current_mac != mac) {
+    esp_bd_addr_t old_bda;
+    old_bda[0] = (uint8_t) (current_mac >> 40);
+    old_bda[1] = (uint8_t) (current_mac >> 32);
+    old_bda[2] = (uint8_t) (current_mac >> 24);
+    old_bda[3] = (uint8_t) (current_mac >> 16);
+    old_bda[4] = (uint8_t) (current_mac >> 8);
+    old_bda[5] = (uint8_t) (current_mac);
+    
+    esp_ble_gattc_cache_clean(old_bda);
+    esp_ble_remove_bond_device(old_bda);
+  }
 }
 
 void EqivaKeyBle::loop() {
+  // BLEClientBase::loop() handles critical state transitions:
+  // - INIT → IDLE (registers GATT app via esp_ble_gattc_app_register)
+  // - DISCONNECTING timeout → forces IDLE if CLOSE_EVT never arrives
+  BLEClientBase::loop();
   uint32_t now = millis();
   if (this->state() == espbt::ClientState::ESTABLISHED) {
     if (this->disconnect_timeout_ > 0) {
