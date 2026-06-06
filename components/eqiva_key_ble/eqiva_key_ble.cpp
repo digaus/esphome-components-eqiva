@@ -698,8 +698,14 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
         currentMsg = msg;
       }
       if (this->state() == espbt::ClientState::IDLE) {
-        ESP_LOGI(TAG, "Triggering connection to send message.");
-        this->connect();
+        if (this->address_ == 0 || this->address_ == 1) {
+          ESP_LOGE(TAG, "Cannot trigger connection: No valid MAC address configured.");
+          sending = 0;
+          currentMsg = NULL;
+        } else {
+          ESP_LOGI(TAG, "Triggering connection to send message.");
+          this->connect();
+        }
       }
       return false;
     }

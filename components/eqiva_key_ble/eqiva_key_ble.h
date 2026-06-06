@@ -219,7 +219,6 @@ class EqivaDisconnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
             // this->parent_->set_user_id(255);
             // this->parent_->set_user_key("");
             this->parent_->disconnect();
-            this->parent_->set_address(1);
         }
 };
 
