@@ -57,7 +57,13 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
     }
     case ESP_GATTC_DISCONNECT_EVT: {
       ESP_LOGD(TAG, "ESP_GATTC_DISCONNECT_EVT");
-    
+      while (!this->sendQueue.empty()) {
+        this->sendQueue.pop();
+      }
+      this->sending = 0;
+      this->sendingNonce = false;
+      this->clientState.remote_session_nonce.clear();
+      this->clientState.local_session_nonce.clear();
       break;
     }
     case ESP_GATTC_SEARCH_RES_EVT: {
@@ -159,6 +165,10 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
           case 0x03: {
               // Nonce success
               ESP_LOGD(TAG, "Case 0x03");
+              if (msgdata.length() < 10) {
+                ESP_LOGW(TAG, "Connection info message too short (len: %zu)", msgdata.length());
+                break;
+              }
               eQ3Message::Connection_Info_Message message;
               message.data = msgdata;
               clientState.user_id = message.getUserId();
@@ -190,6 +200,10 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
 
           case 0x83: {
               ESP_LOGD(TAG, "Case 0x83");
+              if (msgdata.length() < 3) {
+                ESP_LOGW(TAG, "Status info message too short (len: %zu)", msgdata.length());
+                break;
+              }
               // status info
               eQ3Message::Status_Info_Message message;
               message.data = msgdata;
