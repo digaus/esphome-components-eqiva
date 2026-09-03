@@ -98,9 +98,13 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         ss << frag.getData();
         std::string msgdata = ss.str();
         if (eQ3Message::Message::isTypeSecure(msgtype)) {
-          auto msg_security_counter = static_cast<uint16_t>(msgdata[msgdata.length() - 6]);
+          if (msgdata.length() < 7) {
+            ESP_LOGW(TAG, "Malformed secure message: length %zu < 7", msgdata.length());
+            return true;
+          }
+          auto msg_security_counter = static_cast<uint16_t>(static_cast<uint8_t>(msgdata[msgdata.length() - 6]));
           msg_security_counter <<= 8;
-          msg_security_counter += msgdata[msgdata.length() - 5];
+          msg_security_counter += static_cast<uint8_t>(msgdata[msgdata.length() - 5]);
           if (msg_security_counter <= clientState.remote_security_counter) {
               ESP_LOGD(TAG,"Remote security counter missmatch");
               return true;
@@ -359,21 +363,27 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
           sendQueue.push(frag);
           sendFragment();
       }
-      free(msg);
+      delete msg;
       return true;
     } else {
       ESP_LOGI(TAG, "Retaining message...");
       unsigned long currentMillis = getTime();
+      auto retain_msg = [this](eQ3Message::Message *new_msg) {
+        if (this->currentMsg != nullptr && this->currentMsg != new_msg) {
+          delete this->currentMsg;
+        }
+        this->currentMsg = new_msg;
+      };
       // ESP_LOGE(TAG, "Millis: %d | %d", sending, currentMillis);
       if (sending > 0 && currentMillis - sending > 3) {
         sending = 0;
         if (sendingNonce) {
           ESP_LOGI(TAG, "Nonce timeout, sending again...");
           sendNonce();
-          currentMsg = msg;
+          retain_msg(msg);
         } else {
           ESP_LOGI(TAG, "Message timeout, sending again...");
-          currentMsg = msg;
+          retain_msg(msg);
           sendMessage(currentMsg, false);
           currentMsg = NULL;
         }
@@ -387,7 +397,7 @@ bool EqivaKeyBle::sendMessage(eQ3Message::Message *msg, bool nonce) {
         if (this->state() != espbt::ClientState::ESTABLISHED) {
           ESP_LOGI(TAG, "Reason: lock not connected");
         }
-        currentMsg = msg;
+        retain_msg(msg);
       }
       return false;
     }
