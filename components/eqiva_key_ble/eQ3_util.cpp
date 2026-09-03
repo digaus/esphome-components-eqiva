@@ -78,6 +78,7 @@ std::string encrypt_aes_ecb(std::string &data, std::string &key) { // input shou
 // --[xor_array]----------------------------------------------------------------
 // -----------------------------------------------------------------------------
 std::string xor_array(std::string data, std::string xor_array, int offset = 0) {
+    if (xor_array.empty() || data.empty()) return data;
     for (int i = 0; i < data.length(); i++)
         data[i] = data[i] ^ xor_array[(offset + i) % xor_array.length()];
     return data;

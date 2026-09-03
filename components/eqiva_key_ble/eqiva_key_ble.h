@@ -31,12 +31,12 @@ class EqivaKeyBle : public BLEClientBase {
     void finishPair();
 
     std::queue<eQ3Message::MessageFragment> sendQueue;
-    BLECharacteristic *write;
-    BLECharacteristic *read;
-    bool sendingNonce;
-    unsigned long sending;
-    eQ3Message::Message *currentMsg;
-    bool requestPair;
+    BLECharacteristic *write{nullptr};
+    BLECharacteristic *read{nullptr};
+    bool sendingNonce{false};
+    unsigned long sending{0};
+    eQ3Message::Message *currentMsg{nullptr};
+    bool requestPair{false};
 
     unsigned long getTime() {
         return millis() / 1000;
