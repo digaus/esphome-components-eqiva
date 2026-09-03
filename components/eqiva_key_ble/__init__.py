@@ -41,7 +41,7 @@ CONFIG_SCHEMA = cv.ensure_list(
             cv.Optional(CONF_MAC_ADDRESS): cv.templatable(cv.mac_address),
             cv.Optional(CONF_USER_ID, default=255): cv.one_of(0, 1, 2, 3, 4, 5, 6, 7, 255),
             cv.Optional(CONF_USER_KEY, default=""): cv.string,
-            cv.Optional(CONF_DISCONNECT_TIMEOUT, default="10s"): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_DISCONNECT_TIMEOUT, default="0s"): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_STATUS_UPDATE_INTERVAL, default="2h"): cv.positive_time_period_milliseconds,
         }
     )

@@ -98,6 +98,11 @@ bool EqivaKeyBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t 
         return true; // Bypasses BLEClientBase::gattc_event_handler for OPEN_EVT
       }
 
+      if (param->open.status != ESP_GATT_OK && param->open.status != ESP_GATT_ALREADY_OPEN) {
+        ESP_LOGW(TAG, "Connection open failed (status=%d).", param->open.status);
+        return false;
+      }
+
       ESP_LOGD(TAG, "Connection open. Querying local GATT cache for Eqiva Lock...");
 
       // 1. Query Service UUID "58e06900-15d8-11e6-b737-0002a5d5c51b"
@@ -826,7 +831,7 @@ void EqivaKeyBle::loop() {
       if (now - this->last_status_update_time_ > this->status_update_interval_) {
         ESP_LOGI(TAG, "Periodic status update interval reached. Connecting to retrieve status...");
         this->last_status_update_time_ = now;
-        this->connect();
+        this->sendCommand(REQUEST_STATUS);
       }
     }
   }
