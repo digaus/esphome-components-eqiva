@@ -91,8 +91,18 @@ class EqivaKeyBle : public BLEClientBase {
 #ifdef USE_ESP32_BLE_DEVICE
         bool parse_device(const esp32_ble_tracker::ESPBTDevice &device) override;
 #endif
-        void set_disconnect_timeout(uint32_t ms) { this->disconnect_timeout_ = ms; }
-        void set_status_update_interval(uint32_t ms) { this->status_update_interval_ = ms; }
+        void set_disconnect_timeout(uint32_t ms) {
+            this->disconnect_timeout_ = ms;
+            if (this->disconnect_timeout_ > 0 && this->status_update_interval_ > 0) {
+                this->enable_loop();
+            }
+        }
+        void set_status_update_interval(uint32_t ms) {
+            this->status_update_interval_ = ms;
+            if (this->disconnect_timeout_ > 0 && this->status_update_interval_ > 0) {
+                this->enable_loop();
+            }
+        }
         void connect();
         void disconnect();
         void loop() override;

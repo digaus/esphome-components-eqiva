@@ -828,6 +828,9 @@ void EqivaKeyBle::loop() {
     }
   } else if (this->state() == espbt::ClientState::IDLE) {
     if (this->disconnect_timeout_ > 0 && this->status_update_interval_ > 0) {
+      // BLEClientBase::loop() disables the component loop when in IDLE.
+      // Re-enable it so our periodic polling timer continues to run!
+      this->enable_loop();
       if (now - this->last_status_update_time_ > this->status_update_interval_) {
         ESP_LOGI(TAG, "Periodic status update interval reached. Connecting to retrieve status...");
         this->last_status_update_time_ = now;
