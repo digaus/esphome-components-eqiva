@@ -15,6 +15,8 @@ CONF_CARD_KEY = "card_key"
 CONF_TURN_LEFT = "turn_left"
 CONF_KEY_HORIZONTAL = "key_horizontal"
 CONF_LOCK_TURNS = "lock_turns"
+CONF_DISCONNECT_TIMEOUT = "disconnect_timeout"
+CONF_STATUS_UPDATE_INTERVAL = "status_update_interval"
 
 AUTO_LOAD = ["esp32_ble_client", "text_sensor"]
 DEPENDENCIES = ["esp32_ble_tracker"]
@@ -39,6 +41,8 @@ CONFIG_SCHEMA = cv.ensure_list(
             cv.Optional(CONF_MAC_ADDRESS): cv.templatable(cv.mac_address),
             cv.Optional(CONF_USER_ID, default=255): cv.one_of(0, 1, 2, 3, 4, 5, 6, 7, 255),
             cv.Optional(CONF_USER_KEY, default=""): cv.string,
+            cv.Optional(CONF_DISCONNECT_TIMEOUT, default="0s"): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_STATUS_UPDATE_INTERVAL, default="2h"): cv.positive_time_period_milliseconds,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -55,7 +59,8 @@ async def to_code(configs):
             cg.add(var.set_address(mac_address.as_hex))
         cg.add(var.set_user_id(config[CONF_USER_ID]))
         cg.add(var.set_user_key(config[CONF_USER_KEY]))
-        cg.add(var.set_auto_connect(True))
+        cg.add(var.set_disconnect_timeout(config[CONF_DISCONNECT_TIMEOUT]))
+        cg.add(var.set_status_update_interval(config[CONF_STATUS_UPDATE_INTERVAL]))
 
 
 @automation.register_action(

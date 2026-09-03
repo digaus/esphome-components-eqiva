@@ -37,6 +37,16 @@ class EqivaKeyBle : public BLEClientBase {
     unsigned long sending;
     eQ3Message::Message *currentMsg;
     bool requestPair;
+    uint16_t cached_write_handle_{0};
+    uint16_t cached_read_handle_{0};
+    bool manually_allocated_chars_{false};
+    uint32_t last_activity_time_{0};
+    bool handshake_completed_{false};
+    uint32_t disconnect_timeout_{0};
+    uint32_t status_update_interval_{7200000};
+    uint32_t last_status_update_time_{0};
+    std::string pending_mac_address_{""};
+    bool pending_connect_{false};
 
     unsigned long getTime() {
         return millis() / 1000;
@@ -77,6 +87,25 @@ class EqivaKeyBle : public BLEClientBase {
     }
     public:
         ClientState clientState;
+        void setup() override;
+#ifdef USE_ESP32_BLE_DEVICE
+        bool parse_device(const esp32_ble_tracker::ESPBTDevice &device) override;
+#endif
+        void set_disconnect_timeout(uint32_t ms) {
+            this->disconnect_timeout_ = ms;
+            if (this->disconnect_timeout_ > 0 && this->status_update_interval_ > 0) {
+                this->enable_loop();
+            }
+        }
+        void set_status_update_interval(uint32_t ms) {
+            this->status_update_interval_ = ms;
+            if (this->disconnect_timeout_ > 0 && this->status_update_interval_ > 0) {
+                this->enable_loop();
+            }
+        }
+        void connect();
+        void disconnect();
+        void loop() override;
         void startPair();
         void applySettings();
         void sendCommand(CommandType command);
@@ -111,11 +140,24 @@ class EqivaKeyBle : public BLEClientBase {
             BLEClientBase::set_state(st);
             this->lock_ble_state_sensor_->publish_state(getClientState()); 
         };
+        void set_pending_connection(const std::string &mac) {
+            this->pending_mac_address_ = mac;
+            this->pending_connect_ = true;
+        }
+        bool has_pending_connection() const { return this->pending_connect_; }
+        std::string get_pending_mac_address() const { return this->pending_mac_address_; }
+        void clear_pending_connection() { this->pending_connect_ = false; }
+        
+        uint64_t get_configured_mac_address() const { return this->configured_mac_address_; }
+        void set_configured_mac_address(uint64_t mac) { this->configured_mac_address_ = mac; }
+        
+        void clear_bonds_and_cache(const std::string &mac);
         void dump_config() override;
         bool gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                                 esp_ble_gattc_cb_param_t *param) override;
 
     protected: 
+        uint64_t configured_mac_address_{0};
         text_sensor::TextSensor *lock_ble_state_sensor_{nullptr};                
         text_sensor::TextSensor *low_battery_sensor_{nullptr};
         text_sensor::TextSensor *lock_status_sensor_{nullptr};
@@ -152,18 +194,29 @@ class EqivaConnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
         void play(const Ts &...x) override {
 
             auto mac_address = this->mac_address_.value(x...);
-            auto current_mac_address = this->parent_->get_address();
-            if (current_mac_address != 0 && (string_to_mac(mac_address) < current_mac_address || string_to_mac(mac_address) > current_mac_address)) {
-                this->parent_->disconnect();
-            }
+            uint64_t target_mac = string_to_mac(mac_address);
             auto user_id = this->user_id_.value(x...);
             auto user_key = this->user_key_.value(x...);
             this->parent_->set_user_id(user_id);
             this->parent_->set_user_key(user_key);
-            this->parent_->set_address(string_to_mac(mac_address));
-            this->parent_->connect();
-            ESP_LOGD("ESP Eqiva", " Address: %s, %s", this->parent_->address_str(), mac_address.c_str());
 
+            if (this->parent_->get_configured_mac_address() != target_mac) {
+                this->parent_->clear_bonds_and_cache(mac_address);
+                this->parent_->set_configured_mac_address(target_mac);
+                
+                auto current_state = this->parent_->state();
+                if (current_state != espbt::ClientState::IDLE && current_state != espbt::ClientState::INIT) {
+                    this->parent_->set_pending_connection(mac_address);
+                    this->parent_->disconnect();
+                } else {
+                    this->parent_->set_address(target_mac);
+                    this->parent_->connect();
+                }
+            } else {
+                this->parent_->set_address(target_mac);
+                this->parent_->connect();
+            }
+            ESP_LOGD("ESP Eqiva", " Address: %s, %s", this->parent_->address_str(), mac_address.c_str());
         }
 };
 
@@ -174,7 +227,6 @@ class EqivaDisconnect : public Action<Ts...>, public Parented<EqivaKeyBle> {
             // this->parent_->set_user_id(255);
             // this->parent_->set_user_key("");
             this->parent_->disconnect();
-            this->parent_->set_address(1);
         }
 };
 
@@ -215,6 +267,7 @@ class EqivaStatus : public Action<Ts...>, public Parented<EqivaKeyBle> {
  public:
   void play(const Ts &...x) { this->parent_->sendCommand(REQUEST_STATUS); }
 };
+
 
 
 

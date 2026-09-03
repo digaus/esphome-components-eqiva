@@ -298,6 +298,26 @@ sensor:
 ```
 
 
+# Performance Optimizations
+
+This component includes optimizations for fast connection times and low latency:
+
+## Direct Connect and `esp32_ble_tracker`
+The component uses "Direct Connect" (bypassing the active scan window) to achieve fast connection times. However, if the `esp32_ble_tracker` is actively scanning when `connect()` is called, the Bluedroid stack may silently fail or produce long connection times. 
+
+To prevent this, you should ensure that `esp32_ble_tracker` is stopped before connecting to the lock, or that scanning is disabled by default. The provided `example.yaml` demonstrates this by using `continuous: false` and starting/stopping the scan based on wifi connectivity.
+
+## Persistent GATT Caching (NVS)
+The component caches the GATT characteristics to bypass service discovery on subsequent connections. By default, this cache is stored in RAM and is lost upon rebooting the ESP32.
+
+To persist the GATT cache across reboots and ensure fast connections immediately after startup, you must opt-in to NVS caching in your `esp-idf` framework configuration:
+```yaml
+esp32:
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_BT_GATTC_CACHE_NVS_FLASH: "y"
+```
 
 # Initial Pairing:
 Please do previous steps first!
