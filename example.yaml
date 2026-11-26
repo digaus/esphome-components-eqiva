@@ -141,9 +141,9 @@ button:
     icon: "mdi:check-underline"
     on_press:
       - eqiva_key_ble.settings:
-          turn_left: !lambda 'return id(direction).state == "Left";' 
-          key_horizontal: !lambda 'return id(position).state == "Horizontal";'
-          lock_turns: !lambda 'return atoi(id(turns).state.c_str());'
+          turn_left: !lambda 'return id(direction).current_option() == "Left";' 
+          key_horizontal: !lambda 'return id(position).current_option() == "Horizontal";'
+          lock_turns: !lambda 'return atoi(id(turns).current_option().c_str());'
 
 
 text:
